@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:duanju_app/app_layout.dart';
 import 'package:duanju_app/danmaku_overlay.dart';
 import 'package:duanju_app/local_store.dart';
@@ -155,29 +156,24 @@ void main() {
     },
   );
 
-  test(
-    'TV decoder preferences migrate safely and preserve other playback settings',
-    () {
-      final old = PlaybackPreferences.fromJson({'speed': 1.25, 'quality': 720});
-      expect(old.tvDecoderMode, TvDecoderMode.automatic);
-      final saved = old.copyWith(
-        tvDecoderMode: TvDecoderMode.software,
-        tvTextureOutput: true,
-      );
-      final restored = PlaybackPreferences.fromJson(saved.toJson());
-      expect(restored.tvDecoderMode, TvDecoderMode.software);
-      expect(restored.tvTextureOutput, true);
-      expect(restored.speed, 1.25);
-      expect(restored.quality, 720);
-      expect(
-        PlaybackPreferences.fromJson({
-          'tvDecoderMode': 'unknown',
-        }).tvDecoderMode,
-        TvDecoderMode.automatic,
-      );
-      expect(isDecoderCompatibilityError('HTTP 403'), false);
-    },
-  );
+  test('TV decoder preferences migrate safely and preserve other playback settings', () {
+    final old = PlaybackPreferences.fromJson({'speed': 1.25, 'quality': 720});
+    expect(old.tvDecoderMode, TvDecoderMode.automatic);
+    final saved = old.copyWith(
+      tvDecoderMode: TvDecoderMode.software,
+      tvTextureOutput: true,
+    );
+    final restored = PlaybackPreferences.fromJson(saved.toJson());
+    expect(restored.tvDecoderMode, TvDecoderMode.software);
+    expect(restored.tvTextureOutput, true);
+    expect(restored.speed, 1.25);
+    expect(restored.quality, 720);
+    expect(
+      PlaybackPreferences.fromJson({'tvDecoderMode': 'unknown'}).tvDecoderMode,
+      TvDecoderMode.automatic,
+    );
+    expect(isDecoderCompatibilityError('HTTP 403'), false);
+  });
 
   testWidgets(
     'TV and global danmaku settings persist and update live without changing video rate',
@@ -395,9 +391,8 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       expect(find.byKey(const ValueKey('tv-play-pause')), findsNothing);
       expect(
-        ModalRoute.of(
-          tester.element(find.byType(PlayerScreen)),
-        )!.popDisposition,
+        ModalRoute.of(tester.element(find.byType(PlayerScreen)))!
+            .popDisposition,
         RoutePopDisposition.pop,
       );
       await nativeBack(tester);

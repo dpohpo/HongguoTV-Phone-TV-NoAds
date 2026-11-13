@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:duanju_app/app_updates.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import 'app_update_transport_test.dart'
     show TestClient, TestRequest, TestResponse;
 
@@ -104,14 +105,12 @@ void main() {
       expect(await file.length(), release.bytes);
       final digest = (await sha256.bind(file.openRead()).first).toString();
       expect(digest, release.sha256);
-      final android = await GithubUpdateTransport(
-        clientFactory: client,
-      ).latest();
+      final android = await GithubUpdateTransport(clientFactory: client)
+          .latest();
       expect(android['tag_name'], Platform.environment['EXPECTED_ANDROID_TAG']);
       expect(android['prerelease'], false);
-      final androidTag = RegExp(
-        r'^app-v(\d+\.\d+\.\d+)-(\d+)$',
-      ).firstMatch(android['tag_name'] as String)!;
+      final androidTag = RegExp(r'^app-v(\d+\.\d+\.\d+)-(\d+)$')
+          .firstMatch(android['tag_name'] as String)!;
       final androidBuild = int.parse(androidTag[2]!);
       for (final abi in updateAbiOffsets.keys) {
         final androidRelease = AppRelease.parse(

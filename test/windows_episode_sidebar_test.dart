@@ -67,9 +67,8 @@ Future<void> captureSidebar(WidgetTester tester, String state) async {
   await tester.runAsync(() async {
     final image = await boundary.toImage(pixelRatio: 1);
     final bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!;
-    await File(
-      '$directory/windows-sidebar-$state.png',
-    ).writeAsBytes(bytes.buffer.asUint8List());
+    await File('$directory/windows-sidebar-$state.png')
+        .writeAsBytes(bytes.buffer.asUint8List());
     image.dispose();
   });
 }
@@ -447,7 +446,7 @@ void main() {
         await frames(tester);
         expect(tester.state(find.byType(PlayerControls)), same(playerState));
         expect(find.byTooltip('返回原窗口'), findsOneWidget);
-        expect(find.byTooltip('退出红果TV'), findsOneWidget);
+        expect(find.byTooltip('退出凯丽小剧场'), findsOneWidget);
         expect(find.byKey(const ValueKey('player-episodes')), findsNothing);
         await tester.drag(
           find.byKey(const ValueKey('windows-mini-drag')),

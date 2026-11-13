@@ -118,110 +118,101 @@ void main() {
       TestResponse([utf8.encode('not JSON')]),
     ]) {
       await expectLater(
-        GithubUpdateTransport(
-          clientFactory: () => TestClient([response]),
-        ).latest(),
+        GithubUpdateTransport(clientFactory: () => TestClient([response]))
+            .latest(),
         throwsA(isA<Exception>()),
       );
     }
   });
-  test(
-    'APK follows only controlled redirects and rejects untrusted origin before request',
-    () async {
-      final candidate = AppRelease.parse(releaseJson(), installed)!;
-      final dir = await Directory.systemTemp.createTemp('updater-transport-');
-      addTearDown(() => dir.delete(recursive: true));
-      for (final destination in [
-        'http://release-assets.githubusercontent.com/a',
-        'https://evil.test/a',
-        'https://127.0.0.1/a',
-      ]) {
-        final client = TestClient([
-          TestResponse([], statusCode: 302, headers: {'location': destination}),
-        ]);
-        final transport = GithubUpdateTransport(clientFactory: () => client);
-        await expectLater(
-          transport.download(candidate, File('${dir.path}/x'), (_) {}),
-          throwsFormatException,
-        );
-        expect(client.urls.length, 1);
-      }
+  test('APK follows only controlled redirects and rejects untrusted origin before request', () async {
+    final candidate = AppRelease.parse(releaseJson(), installed)!;
+    final dir = await Directory.systemTemp.createTemp('updater-transport-');
+    addTearDown(() => dir.delete(recursive: true));
+    for (final destination in [
+      'http://release-assets.githubusercontent.com/a',
+      'https://evil.test/a',
+      'https://127.0.0.1/a',
+    ]) {
       final client = TestClient([
+        TestResponse([], statusCode: 302, headers: {'location': destination}),
+      ]);
+      final transport = GithubUpdateTransport(clientFactory: () => client);
+      await expectLater(
+        transport.download(candidate, File('${dir.path}/x'), (_) {}),
+        throwsFormatException,
+      );
+      expect(client.urls.length, 1);
+    }
+    final client = TestClient([
+      TestResponse(
+        [],
+        statusCode: 302,
+        headers: {
+          'location':
+              'https://release-assets.githubusercontent.com/a?signature=short',
+        },
+      ),
+      TestResponse([
+        [1, 2],
+        [3, 4],
+      ], contentLength: 4),
+    ]);
+    final output = File('${dir.path}/good');
+    await GithubUpdateTransport(clientFactory: () => client)
+        .download(candidate, output, (_) {});
+    expect(await output.readAsBytes(), [1, 2, 3, 4]);
+    expect(
+      client.requests.every(
+        (request) => request.headers.value('accept-encoding') == 'identity',
+      ),
+      isTrue,
+    );
+  });
+  test('APK rejects content length mismatch, oversized stream, short stream, compression and redirect loop', () async {
+    final candidate = AppRelease.parse(releaseJson(), installed)!;
+    final dir = await Directory.systemTemp.createTemp('updater-transport-');
+    addTearDown(() => dir.delete(recursive: true));
+    for (final responses in [
+      [
+        TestResponse([
+          [1, 2, 3, 4],
+        ], contentLength: 5),
+      ],
+      [
+        TestResponse([
+          [1, 2, 3, 4, 5],
+        ]),
+      ],
+      [
+        TestResponse([
+          [1, 2, 3],
+        ]),
+      ],
+      [
         TestResponse(
+          [
+            [1, 2, 3, 4],
+          ],
+          headers: {'content-encoding': 'gzip'},
+        ),
+      ],
+      List.generate(
+        6,
+        (_) => TestResponse(
           [],
           statusCode: 302,
           headers: {
-            'location':
-                'https://release-assets.githubusercontent.com/a?signature=short',
+            'location': 'https://release-assets.githubusercontent.com/a',
           },
         ),
-        TestResponse([
-          [1, 2],
-          [3, 4],
-        ], contentLength: 4),
-      ]);
-      final output = File('${dir.path}/good');
-      await GithubUpdateTransport(
-        clientFactory: () => client,
-      ).download(candidate, output, (_) {});
-      expect(await output.readAsBytes(), [1, 2, 3, 4]);
-      expect(
-        client.requests.every(
-          (request) => request.headers.value('accept-encoding') == 'identity',
-        ),
-        isTrue,
+      ),
+    ]) {
+      final client = TestClient(responses);
+      await expectLater(
+        GithubUpdateTransport(clientFactory: () => client)
+            .download(candidate, File('${dir.path}/x'), (_) {}),
+        throwsFormatException,
       );
-    },
-  );
-  test(
-    'APK rejects content length mismatch, oversized stream, short stream, compression and redirect loop',
-    () async {
-      final candidate = AppRelease.parse(releaseJson(), installed)!;
-      final dir = await Directory.systemTemp.createTemp('updater-transport-');
-      addTearDown(() => dir.delete(recursive: true));
-      for (final responses in [
-        [
-          TestResponse([
-            [1, 2, 3, 4],
-          ], contentLength: 5),
-        ],
-        [
-          TestResponse([
-            [1, 2, 3, 4, 5],
-          ]),
-        ],
-        [
-          TestResponse([
-            [1, 2, 3],
-          ]),
-        ],
-        [
-          TestResponse(
-            [
-              [1, 2, 3, 4],
-            ],
-            headers: {'content-encoding': 'gzip'},
-          ),
-        ],
-        List.generate(
-          6,
-          (_) => TestResponse(
-            [],
-            statusCode: 302,
-            headers: {
-              'location': 'https://release-assets.githubusercontent.com/a',
-            },
-          ),
-        ),
-      ]) {
-        final client = TestClient(responses);
-        await expectLater(
-          GithubUpdateTransport(
-            clientFactory: () => client,
-          ).download(candidate, File('${dir.path}/x'), (_) {}),
-          throwsFormatException,
-        );
-      }
-    },
-  );
+    }
+  });
 }

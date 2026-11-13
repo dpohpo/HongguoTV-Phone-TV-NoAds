@@ -152,9 +152,8 @@ class _SourcesScreenState extends State<SourcesScreen> {
     if (status.storageError.isNotEmpty) text.writeln(status.storageError);
     await Clipboard.setData(ClipboardData(text: text.toString()));
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('诊断信息已复制')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('诊断信息已复制')));
     }
   }
 
@@ -426,9 +425,9 @@ class _SourcesScreenState extends State<SourcesScreen> {
                                     Text(health.label),
                                     Text(
                                       sourceTimestamp(health.checkedAt),
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall,
                                     ),
                                   ],
                                 ),

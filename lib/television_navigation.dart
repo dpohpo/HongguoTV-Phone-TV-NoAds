@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'app_build.dart';
+
 class TelevisionBackIntent extends Intent {
   const TelevisionBackIntent();
 }
@@ -142,7 +144,7 @@ class TelevisionNavigationState extends State<TelevisionNavigation> {
       final accepted = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('退出红果TV？'),
+          title: Text('退出$appName？'),
           content: const Text('观看记录会保留。'),
           actions: [
             TextButton(

@@ -183,52 +183,49 @@ void main() {
         expect(() => AppRelease.parse(json, installed), throwsFormatException);
       },
     );
-    test(
-      'TLS and redirect allowlist reject credentials, ports, local/private and foreign origins',
-      () {
-        final valid = AppRelease.parse(releaseJson(), installed)!.url;
-        expect(trustedUpdateUrl(valid, metadata: false, initial: true), isTrue);
+    test('TLS and redirect allowlist reject credentials, ports, local/private and foreign origins', () {
+      final valid = AppRelease.parse(releaseJson(), installed)!.url;
+      expect(trustedUpdateUrl(valid, metadata: false, initial: true), isTrue);
+      expect(
+        trustedUpdateUrl(Uri.parse(updateApi), metadata: true, initial: true),
+        isTrue,
+      );
+      for (final url in [
+        'http://release-assets.githubusercontent.com/a',
+        'https://github.com.evil.test/a',
+        'https://user@release-assets.githubusercontent.com/a',
+        'https://release-assets.githubusercontent.com:444/a',
+        'https://127.0.0.1/a',
+        'https://192.168.1.1/a',
+        'https://api.github.com/other',
+        'https://github.com/other/repo/releases/download/a/b',
+        'https://release-assets.githubusercontent.com/a#fragment',
+      ]) {
         expect(
-          trustedUpdateUrl(Uri.parse(updateApi), metadata: true, initial: true),
-          isTrue,
-        );
-        for (final url in [
-          'http://release-assets.githubusercontent.com/a',
-          'https://github.com.evil.test/a',
-          'https://user@release-assets.githubusercontent.com/a',
-          'https://release-assets.githubusercontent.com:444/a',
-          'https://127.0.0.1/a',
-          'https://192.168.1.1/a',
-          'https://api.github.com/other',
-          'https://github.com/other/repo/releases/download/a/b',
-          'https://release-assets.githubusercontent.com/a#fragment',
-        ]) {
-          expect(
-            trustedUpdateUrl(Uri.parse(url), metadata: false, initial: false),
-            isFalse,
-            reason: url,
-          );
-        }
-        expect(
-          trustedUpdateUrl(
-            Uri.parse(
-              'https://release-assets.githubusercontent.com/a?token=short',
-            ),
-            metadata: false,
-            initial: false,
-          ),
-          isTrue,
-        );
-        expect(
-          trustedUpdateUrl(
-            Uri.parse('https://release-assets.githubusercontent.com/a'),
-            metadata: false,
-            initial: true,
-          ),
+          trustedUpdateUrl(Uri.parse(url), metadata: false, initial: false),
           isFalse,
+          reason: url,
         );
-      },
-    );
+      }
+      expect(
+        trustedUpdateUrl(
+          Uri.parse(
+            'https://release-assets.githubusercontent.com/a?token=short',
+          ),
+          metadata: false,
+          initial: false,
+        ),
+        isTrue,
+      );
+      expect(
+        trustedUpdateUrl(
+          Uri.parse('https://release-assets.githubusercontent.com/a'),
+          metadata: false,
+          initial: true,
+        ),
+        isFalse,
+      );
+    });
   });
 
   group('update controller', () {
@@ -255,42 +252,36 @@ void main() {
       await directory.delete(recursive: true);
     });
 
-    test(
-      'automatic checks are cached; manual bypasses; metadata never auto-downloads',
-      () async {
-        await updater.check();
-        expect(updater.stage, UpdateStage.available);
-        await updater.check();
-        expect(transport.checks, 1);
-        final second = AppUpdates(
-          supportedEdition: true,
-          preferences: prefs,
-          transport: transport,
-          platform: platform,
-        );
-        await second.check();
-        expect(transport.checks, 1);
-        second.dispose();
-        await updater.check(manual: true);
-        expect(transport.checks, 2);
-        expect(transport.downloads, 0);
-        expect(platform.installs, 0);
-      },
-    );
-    test(
-      'failed lookup is a retryable failure, never already latest; retry cooldown',
-      () async {
-        transport.failure = const SocketException('offline');
-        await updater.check();
-        expect(updater.stage, UpdateStage.failed);
-        expect(updater.message, contains('无法检查'));
-        await updater.check();
-        expect(transport.checks, 1);
-        transport.failure = null;
-        await updater.check(manual: true);
-        expect(updater.stage, UpdateStage.available);
-      },
-    );
+    test('automatic checks are cached; manual bypasses; metadata never auto-downloads', () async {
+      await updater.check();
+      expect(updater.stage, UpdateStage.available);
+      await updater.check();
+      expect(transport.checks, 1);
+      final second = AppUpdates(
+        supportedEdition: true,
+        preferences: prefs,
+        transport: transport,
+        platform: platform,
+      );
+      await second.check();
+      expect(transport.checks, 1);
+      second.dispose();
+      await updater.check(manual: true);
+      expect(transport.checks, 2);
+      expect(transport.downloads, 0);
+      expect(platform.installs, 0);
+    });
+    test('failed lookup is a retryable failure, never already latest; retry cooldown', () async {
+      transport.failure = const SocketException('offline');
+      await updater.check();
+      expect(updater.stage, UpdateStage.failed);
+      expect(updater.message, contains('无法检查'));
+      await updater.check();
+      expect(transport.checks, 1);
+      transport.failure = null;
+      await updater.check(manual: true);
+      expect(updater.stage, UpdateStage.available);
+    });
     test(
       'automatic preference disables checks only, manual remains usable',
       () async {
@@ -387,27 +378,24 @@ void main() {
         }
       },
     );
-    test(
-      'repeat download clicks create one operation and cancel removes partial file',
-      () async {
-        await updater.check();
-        transport.gate = Completer<void>();
-        final pending = updater.download();
-        while (transport.downloads == 0) {
-          await Future<void>.delayed(Duration.zero);
-        }
-        await updater.download();
-        updater.cancelDownload();
-        await pending;
-        expect(transport.downloads, 1);
-        expect(updater.stage, UpdateStage.available);
-        expect(await File('${directory.path}/pending.apk').exists(), isFalse);
-        expect(
-          await File('${directory.path}/pending.apk.part').exists(),
-          isFalse,
-        );
-      },
-    );
+    test('repeat download clicks create one operation and cancel removes partial file', () async {
+      await updater.check();
+      transport.gate = Completer<void>();
+      final pending = updater.download();
+      while (transport.downloads == 0) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      await updater.download();
+      updater.cancelDownload();
+      await pending;
+      expect(transport.downloads, 1);
+      expect(updater.stage, UpdateStage.available);
+      expect(await File('${directory.path}/pending.apk').exists(), isFalse);
+      expect(
+        await File('${directory.path}/pending.apk.part').exists(),
+        isFalse,
+      );
+    });
     test(
       'cancellation during directory lookup never starts transport',
       () async {
@@ -480,27 +468,24 @@ void main() {
         expect(updater.message, contains('尚未确认'));
       },
     );
-    test(
-      'unsupported edition cannot check, download or install from all-source feed',
-      () async {
-        final unsupported = AppUpdates(
-          preferences: prefs,
-          transport: transport,
-          platform: platform,
-          supportedEdition: false,
-        );
-        await unsupported.check(manual: true);
-        expect(transport.checks, 0);
-        unsupported.release = AppRelease.parse(releaseJson(), installed);
-        unsupported.stage = UpdateStage.available;
-        await unsupported.download();
-        unsupported.stage = UpdateStage.ready;
-        await unsupported.install();
-        expect(transport.downloads, 0);
-        expect(platform.installs, 0);
-        unsupported.dispose();
-      },
-    );
+    test('unsupported edition cannot check, download or install from all-source feed', () async {
+      final unsupported = AppUpdates(
+        preferences: prefs,
+        transport: transport,
+        platform: platform,
+        supportedEdition: false,
+      );
+      await unsupported.check(manual: true);
+      expect(transport.checks, 0);
+      unsupported.release = AppRelease.parse(releaseJson(), installed);
+      unsupported.stage = UpdateStage.available;
+      await unsupported.download();
+      unsupported.stage = UpdateStage.ready;
+      await unsupported.install();
+      expect(transport.downloads, 0);
+      expect(platform.installs, 0);
+      unsupported.dispose();
+    });
     test(
       'dispose during installed lookup never starts network or writes cache',
       () async {
@@ -555,35 +540,29 @@ void main() {
       await pending;
       expect(platform.installs, 0);
     });
-    test(
-      'startup removes interrupted partial and APK after proven completed update',
-      () async {
-        await File('${directory.path}/pending.apk').writeAsBytes([1]);
-        await File('${directory.path}/pending.apk.part').writeAsBytes([2]);
-        await prefs.setInt('app_update_installing_code', installed.code);
-        await updater.check();
-        expect(await File('${directory.path}/pending.apk').exists(), isFalse);
-        expect(
-          await File('${directory.path}/pending.apk.part').exists(),
-          isFalse,
-        );
-        expect(prefs.getInt('app_update_installing_code'), isNull);
-      },
-    );
-    test(
-      'startup retains pending installer APK while installed code has not advanced',
-      () async {
-        await File('${directory.path}/pending.apk').writeAsBytes([1]);
-        await File('${directory.path}/pending.apk.part').writeAsBytes([2]);
-        await prefs.setInt('app_update_installing_code', installed.code + 1);
-        await updater.check();
-        expect(await File('${directory.path}/pending.apk').exists(), isTrue);
-        expect(
-          await File('${directory.path}/pending.apk.part').exists(),
-          isFalse,
-        );
-      },
-    );
+    test('startup removes interrupted partial and APK after proven completed update', () async {
+      await File('${directory.path}/pending.apk').writeAsBytes([1]);
+      await File('${directory.path}/pending.apk.part').writeAsBytes([2]);
+      await prefs.setInt('app_update_installing_code', installed.code);
+      await updater.check();
+      expect(await File('${directory.path}/pending.apk').exists(), isFalse);
+      expect(
+        await File('${directory.path}/pending.apk.part').exists(),
+        isFalse,
+      );
+      expect(prefs.getInt('app_update_installing_code'), isNull);
+    });
+    test('startup retains pending installer APK while installed code has not advanced', () async {
+      await File('${directory.path}/pending.apk').writeAsBytes([1]);
+      await File('${directory.path}/pending.apk.part').writeAsBytes([2]);
+      await prefs.setInt('app_update_installing_code', installed.code + 1);
+      await updater.check();
+      expect(await File('${directory.path}/pending.apk').exists(), isTrue);
+      expect(
+        await File('${directory.path}/pending.apk.part').exists(),
+        isFalse,
+      );
+    });
     test(
       'cancel permission leaves ready and grants no system permission',
       () async {

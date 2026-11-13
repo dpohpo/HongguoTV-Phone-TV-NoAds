@@ -75,17 +75,15 @@ class WindowsUpdateHelper {
         await File(p.join(transaction.path, 'cancel.txt')).exists()) {
       throw StateError('更新助手已退出或事务已取消，旧版未替换');
     }
-    await File(
-      p.join(transaction.path, 'commit.txt'),
-    ).writeAsString(nonce, flush: true);
+    await File(p.join(transaction.path, 'commit.txt'))
+        .writeAsString(nonce, flush: true);
     await log('handoff-authorized');
   }
 
   Future<bool> cancelAndWait() async {
     try {
-      await File(
-        p.join(transaction.path, 'cancel.txt'),
-      ).writeAsString(nonce, flush: true);
+      await File(p.join(transaction.path, 'cancel.txt'))
+          .writeAsString(nonce, flush: true);
       await log('cancelling-helper');
     } catch (error) {
       await _tryLog('cancel-write-failed', error);
@@ -185,17 +183,16 @@ class WindowsUpdateRuntime {
   static Future<void> startupPhase(String phase, {Object? error}) async {
     final transaction = startupTransaction;
     if (transaction == null) return;
-    await File(
-      p.join(transaction.path, 'startup-$windowsBuildNumber.json'),
-    ).writeAsString(
-      jsonEncode({
-        'phase': phase,
-        'build': windowsBuildNumber,
-        'nonce': p.basename(transaction.path),
-        if (error != null) 'error': error.toString(),
-      }),
-      flush: true,
-    );
+    await File(p.join(transaction.path, 'startup-$windowsBuildNumber.json'))
+        .writeAsString(
+          jsonEncode({
+            'phase': phase,
+            'build': windowsBuildNumber,
+            'nonce': p.basename(transaction.path),
+            if (error != null) 'error': error.toString(),
+          }),
+          flush: true,
+        );
   }
 
   static Future<Map<String, dynamic>?> ready() async {
@@ -210,9 +207,8 @@ class WindowsUpdateRuntime {
       }
     }
     if (fields['build'] == '$windowsBuildNumber') {
-      await File(
-        p.join(transaction.path, 'ack.txt'),
-      ).writeAsString(fields['nonce']!, flush: true);
+      await File(p.join(transaction.path, 'ack.txt'))
+          .writeAsString(fields['nonce']!, flush: true);
       await startupPhase('acknowledged');
     }
     final delivered = File(
@@ -272,9 +268,8 @@ class WindowsUpdateRuntime {
       await flushStore?.call();
       final resume = await savePlayback?.call();
       if (resume != null)
-        await File(
-          p.join(transaction.path, 'resume.json'),
-        ).writeAsString(jsonEncode(resume), flush: true);
+        await File(p.join(transaction.path, 'resume.json'))
+            .writeAsString(jsonEncode(resume), flush: true);
       await flushStore?.call();
       final config = File(p.join(support.path, 'shared_preferences.json'));
       if (await config.exists())
@@ -290,9 +285,8 @@ class WindowsUpdateRuntime {
             '${(entry.value as Map)['sha256']}\t${entry.key}',
           '${(await sha256.bind(File(p.join(dir.path, 'windows-package.json')).openRead()).first)}\twindows-package.json',
         ];
-        await File(
-          p.join(transaction!.path, name),
-        ).writeAsString('${entries.join('\n')}\n', flush: true);
+        await File(p.join(transaction!.path, name))
+            .writeAsString('${entries.join('\n')}\n', flush: true);
       }
 
       await records('old-files.tsv', root, old);
@@ -319,9 +313,8 @@ class WindowsUpdateRuntime {
         fields.entries.map((entry) => '${entry.key}=${entry.value}').join('\n'),
         flush: true,
       );
-      final helper = await File(
-        p.join(root.path, 'HongguoTV-updater.exe'),
-      ).copy(p.join(transaction.path, 'HongguoTV-updater.exe'));
+      final helper = await File(p.join(root.path, 'HongguoTV-updater.exe'))
+          .copy(p.join(transaction.path, 'HongguoTV-updater.exe'));
       final process = await Process.start(
         helper.path,
         [plan.path],

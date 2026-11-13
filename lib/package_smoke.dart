@@ -1,4 +1,5 @@
 import 'desktop_fullscreen.dart';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -15,6 +16,7 @@ import 'danmaku_emoji_assets.dart';
 import 'media_pipeline.dart';
 import 'video_enhancement_assets.dart';
 import 'windows_desktop.dart';
+
 import 'dart:async';
 
 Future<void> runPackageSmoke(List<String> arguments) async {

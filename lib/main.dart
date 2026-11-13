@@ -197,9 +197,9 @@ class _AppBootstrapState extends State<AppBootstrap>
         unawaited(library.cancel());
       }
       unawaited(
-        NativeRepository(
-          background: true,
-        ).controlDownloads('pauseAll').catchError((Object _) {}),
+        NativeRepository(background: true)
+            .controlDownloads('pauseAll')
+            .catchError((Object _) {}),
       );
     } else if (state == AppLifecycleState.resumed) {
       if (library != null) library.suspended = false;

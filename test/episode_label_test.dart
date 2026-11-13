@@ -41,31 +41,25 @@ void main() {
       );
     },
   );
-  test(
-    'ongoing, incomplete and unavailable lists never claim a final or zero total',
-    () {
-      expect(
-        episodeProgressLabel(
-          season(count: 3, declared: 3, status: 'ongoing'),
-          2,
-        ),
-        '第 3 集 / 已更新 3 集',
-      );
-      expect(
-        episodeProgressLabel(season(count: 3, partial: true), 2),
-        '第 3 集 / 已载入 3 集',
-      );
-      expect(episodeProgressLabel(season(count: 0), 0), '当前集未知 / 总集数未知');
-      final parsed = DramaDetail.fromJson({
-        'drama': {'id': 'x'},
-        'chapters': [
-          {'id': 'a'},
-        ],
-        'episodesComplete': false,
-      });
-      expect(episodeProgressLabel(parsed, 0), '第 1 集 / 已载入 1 集');
-    },
-  );
+  test('ongoing, incomplete and unavailable lists never claim a final or zero total', () {
+    expect(
+      episodeProgressLabel(season(count: 3, declared: 3, status: 'ongoing'), 2),
+      '第 3 集 / 已更新 3 集',
+    );
+    expect(
+      episodeProgressLabel(season(count: 3, partial: true), 2),
+      '第 3 集 / 已载入 3 集',
+    );
+    expect(episodeProgressLabel(season(count: 0), 0), '当前集未知 / 总集数未知');
+    final parsed = DramaDetail.fromJson({
+      'drama': {'id': 'x'},
+      'chapters': [
+        {'id': 'a'},
+      ],
+      'episodesComplete': false,
+    });
+    expect(episodeProgressLabel(parsed, 0), '第 1 集 / 已载入 1 集');
+  });
   test(
     'special titles remain recognizable and numeric formats stay consistent',
     () {

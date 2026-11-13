@@ -164,101 +164,95 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
-  test(
-    'playback diagnostics retain buffering metadata across native controller replacement and disposal',
-    () async {
-      final previous = VideoPlayerPlatform.instance;
-      final platform = DiagnosticVideoPlatform();
-      VideoPlayerPlatform.instance = platform;
-      addTearDown(() => VideoPlayerPlatform.instance = previous);
-      DiaryService.clear();
-      final player = LunaExoPlayer();
-      await player.open(Media('file:///synthetic-diagnostic.mp4'));
-      expect(platform.created, 1);
-      platform.streams[0]!.add(
-        VideoEvent(
-          eventType: VideoEventType.bufferingUpdate,
-          buffered: [DurationRange(Duration.zero, const Duration(seconds: 60))],
-        ),
-      );
-      platform.streams[0]!.add(
-        VideoEvent(eventType: VideoEventType.bufferingStart),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(player.state.buffering, isTrue);
-      await player.open(Media('file:///synthetic-diagnostic-next.mp4'));
-      expect(DiaryService.fullText, contains('buffering=true'));
-      expect(DiaryService.fullText, contains('bufferedAheadMs=60000'));
-      expect(DiaryService.fullText, contains('bufferingCount=1'));
-      expect(DiaryService.fullText, contains('uiBudgetMs='));
-      expect(platform.created, 2);
-      expect(platform.disposed, [0]);
-      await player.dispose();
-      expect(platform.disposed, [0, 1]);
-      final entries = DiaryService.entries.length;
-      await Future<void>.delayed(const Duration(milliseconds: 20));
-      expect(DiaryService.entries.length, entries);
-    },
-  );
-  test(
-    'TV uses native output, compatibility and phone keep texture output; native diagnostics use the active player',
-    () async {
-      final previous = VideoPlayerPlatform.instance;
-      final platform = DiagnosticVideoPlatform();
-      VideoPlayerPlatform.instance = platform;
-      addTearDown(() => VideoPlayerPlatform.instance = previous);
-      final requests = <int>[];
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (
-            call,
-          ) async {
-            expect(call.method, 'snapshot');
-            requests.add((call.arguments as Map)['playerId'] as int);
-            return {
-              'decoder': 'synthetic.hardware.avc',
-              'hardware': 'true',
-              'output': 'surface-hybrid',
-              'renderedTotal': 900,
-              'droppedTotal': 7,
-            };
-          });
-      addTearDown(
-        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-            .setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, null),
-      );
-      var television = true;
-      var texture = false;
-      final player = LunaExoPlayer(
-        television: () => television,
-        textureOutput: () => texture,
-      );
-      DiaryService.clear();
-      await player.open(Media('file:///synthetic-tv.mp4'));
-      expect(platform.views, [VideoViewType.platformView]);
-      await player.reportNativeDiagnostics();
-      expect(requests, [0]);
-      expect(DiaryService.fullText, contains('decoder=synthetic.hardware.avc'));
-      expect(DiaryService.fullText, contains('droppedTotal=7'));
-      texture = true;
-      await player.open(
-        Media(
-          'file:///synthetic-compatibility.mp4',
-          start: const Duration(seconds: 12),
-        ),
-        play: false,
-      );
-      expect(platform.views.last, VideoViewType.textureView);
-      expect(player.state.position, const Duration(seconds: 12));
-      expect(player.state.playing, false);
-      television = false;
-      texture = false;
-      await player.open(Media('file:///synthetic-phone.mp4'));
-      expect(platform.views.last, VideoViewType.textureView);
-      await player.reportNativeDiagnostics();
-      expect(requests.last, 2);
-      await player.dispose();
-    },
-  );
+  test('playback diagnostics retain buffering metadata across native controller replacement and disposal', () async {
+    final previous = VideoPlayerPlatform.instance;
+    final platform = DiagnosticVideoPlatform();
+    VideoPlayerPlatform.instance = platform;
+    addTearDown(() => VideoPlayerPlatform.instance = previous);
+    DiaryService.clear();
+    final player = LunaExoPlayer();
+    await player.open(Media('file:///synthetic-diagnostic.mp4'));
+    expect(platform.created, 1);
+    platform.streams[0]!.add(
+      VideoEvent(
+        eventType: VideoEventType.bufferingUpdate,
+        buffered: [DurationRange(Duration.zero, const Duration(seconds: 60))],
+      ),
+    );
+    platform.streams[0]!.add(
+      VideoEvent(eventType: VideoEventType.bufferingStart),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(player.state.buffering, isTrue);
+    await player.open(Media('file:///synthetic-diagnostic-next.mp4'));
+    expect(DiaryService.fullText, contains('buffering=true'));
+    expect(DiaryService.fullText, contains('bufferedAheadMs=60000'));
+    expect(DiaryService.fullText, contains('bufferingCount=1'));
+    expect(DiaryService.fullText, contains('uiBudgetMs='));
+    expect(platform.created, 2);
+    expect(platform.disposed, [0]);
+    await player.dispose();
+    expect(platform.disposed, [0, 1]);
+    final entries = DiaryService.entries.length;
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(DiaryService.entries.length, entries);
+  });
+  test('TV uses native output, compatibility and phone keep texture output; native diagnostics use the active player', () async {
+    final previous = VideoPlayerPlatform.instance;
+    final platform = DiagnosticVideoPlatform();
+    VideoPlayerPlatform.instance = platform;
+    addTearDown(() => VideoPlayerPlatform.instance = previous);
+    final requests = <int>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (
+          call,
+        ) async {
+          expect(call.method, 'snapshot');
+          requests.add((call.arguments as Map)['playerId'] as int);
+          return {
+            'decoder': 'synthetic.hardware.avc',
+            'hardware': 'true',
+            'output': 'surface-hybrid',
+            'renderedTotal': 900,
+            'droppedTotal': 7,
+          };
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, null),
+    );
+    var television = true;
+    var texture = false;
+    final player = LunaExoPlayer(
+      television: () => television,
+      textureOutput: () => texture,
+    );
+    DiaryService.clear();
+    await player.open(Media('file:///synthetic-tv.mp4'));
+    expect(platform.views, [VideoViewType.platformView]);
+    await player.reportNativeDiagnostics();
+    expect(requests, [0]);
+    expect(DiaryService.fullText, contains('decoder=synthetic.hardware.avc'));
+    expect(DiaryService.fullText, contains('droppedTotal=7'));
+    texture = true;
+    await player.open(
+      Media(
+        'file:///synthetic-compatibility.mp4',
+        start: const Duration(seconds: 12),
+      ),
+      play: false,
+    );
+    expect(platform.views.last, VideoViewType.textureView);
+    expect(player.state.position, const Duration(seconds: 12));
+    expect(player.state.playing, false);
+    television = false;
+    texture = false;
+    await player.open(Media('file:///synthetic-phone.mp4'));
+    expect(platform.views.last, VideoViewType.textureView);
+    await player.reportNativeDiagnostics();
+    expect(requests.last, 2);
+    await player.dispose();
+  });
   test(
     'twenty episode changes release each decoder before allocating the next',
     () async {
@@ -282,33 +276,30 @@ void main() {
     },
   );
 
-  test(
-    'an asynchronous source error reaches recovery once and the next episode can open',
-    () async {
-      final previous = VideoPlayerPlatform.instance;
-      final platform = DiagnosticVideoPlatform();
-      VideoPlayerPlatform.instance = platform;
-      addTearDown(() => VideoPlayerPlatform.instance = previous);
-      final player = LunaExoPlayer();
-      final errors = <String>[];
-      final subscription = player.stream.error.listen(errors.add);
-      await player.open(Media('file:///synthetic-runtime-error.mp4'));
-      platform.streams[0]!.addError(
-        PlatformException(
-          code: 'VideoError',
-          message: 'synthetic source expired',
-        ),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 20));
-      expect(player.state.playing, false);
-      expect(errors, ['synthetic source expired']);
-      await player.open(Media('file:///synthetic-refreshed.mp4'));
-      expect(player.state.playing, true);
-      expect(platform.peakLive, 1);
-      await player.dispose();
-      await subscription.cancel();
-    },
-  );
+  test('an asynchronous source error reaches recovery once and the next episode can open', () async {
+    final previous = VideoPlayerPlatform.instance;
+    final platform = DiagnosticVideoPlatform();
+    VideoPlayerPlatform.instance = platform;
+    addTearDown(() => VideoPlayerPlatform.instance = previous);
+    final player = LunaExoPlayer();
+    final errors = <String>[];
+    final subscription = player.stream.error.listen(errors.add);
+    await player.open(Media('file:///synthetic-runtime-error.mp4'));
+    platform.streams[0]!.addError(
+      PlatformException(
+        code: 'VideoError',
+        message: 'synthetic source expired',
+      ),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(player.state.playing, false);
+    expect(errors, ['synthetic source expired']);
+    await player.open(Media('file:///synthetic-refreshed.mp4'));
+    expect(player.state.playing, true);
+    expect(platform.peakLive, 1);
+    await player.dispose();
+    await subscription.cancel();
+  });
 
   test(
     'initialization timeout releases the failed native player and allows retry',

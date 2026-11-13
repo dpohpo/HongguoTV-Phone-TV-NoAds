@@ -121,46 +121,38 @@ void main() {
     },
   );
 
-  test(
-    'progress validates target identity and keeps legacy four-field values readable',
-    () {
-      final old = LanDocument.fromJson(legacy()).records[first.id]!;
-      expect(old.watch!.drama.id, first.id);
-      final good = old.toJson();
-      good['progress'] = [
-        LanValue(old.progress.version, lanProgress(watch(third, 3))).toJson(),
+  test('progress validates target identity and keeps legacy four-field values readable', () {
+    final old = LanDocument.fromJson(legacy()).records[first.id]!;
+    expect(old.watch!.drama.id, first.id);
+    final good = old.toJson();
+    good['progress'] = [
+      LanValue(old.progress.version, lanProgress(watch(third, 3))).toJson(),
+    ];
+    expect(LanRecord.fromJson(good).watch!.drama.id, third.id);
+    for (final target in [
+      const Drama(
+        id: 'huangdou:migrate-s3',
+        source: 'huangdou',
+        title: '迁移合成 第三季',
+      ),
+      const Drama(
+        id: 'hongguo:unrelated-s3',
+        source: 'hongguo',
+        title: '另一合成 第三季',
+      ),
+      const Drama(id: 'hongguo:part', source: 'hongguo', title: '迁移合成 第三部'),
+    ]) {
+      final wrong = Map<String, dynamic>.of(good);
+      wrong['progress'] = [
+        LanValue(old.progress.version, lanProgress(watch(target, 3))).toJson(),
       ];
-      expect(LanRecord.fromJson(good).watch!.drama.id, third.id);
-      for (final target in [
-        const Drama(
-          id: 'huangdou:migrate-s3',
-          source: 'huangdou',
-          title: '迁移合成 第三季',
-        ),
-        const Drama(
-          id: 'hongguo:unrelated-s3',
-          source: 'hongguo',
-          title: '另一合成 第三季',
-        ),
-        const Drama(id: 'hongguo:part', source: 'hongguo', title: '迁移合成 第三部'),
-      ]) {
-        final wrong = Map<String, dynamic>.of(good);
-        wrong['progress'] = [
-          LanValue(
-            old.progress.version,
-            lanProgress(watch(target, 3)),
-          ).toJson(),
-        ];
-        expect(() => LanRecord.fromJson(wrong), throwsFormatException);
-      }
-      expect(
-        () => old.progress.merge(
-          LanCell([
-            LanValue(old.progress.version, lanProgress(watch(third, 3))),
-          ]),
-        ),
-        throwsFormatException,
-      );
-    },
-  );
+      expect(() => LanRecord.fromJson(wrong), throwsFormatException);
+    }
+    expect(
+      () => old.progress.merge(
+        LanCell([LanValue(old.progress.version, lanProgress(watch(third, 3)))]),
+      ),
+      throwsFormatException,
+    );
+  });
 }

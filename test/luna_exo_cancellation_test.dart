@@ -151,10 +151,8 @@ void main() {
           'dispose' => player.dispose(),
           _ => player.cancelPending(),
         };
-        await Future.wait([
-          opening,
-          cancelled,
-        ]).timeout(const Duration(milliseconds: 500));
+        await Future.wait([opening, cancelled])
+            .timeout(const Duration(milliseconds: 500));
         expect(platform.disposed, [0]);
         expect(player.controller, isNull);
         await player.dispose();
@@ -263,114 +261,98 @@ void main() {
     },
   );
 
-  test(
-    'cancelled transition settles before native reply and cannot restart playback',
-    () async {
-      final reply = Completer<Map<String, Object>>();
-      messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (
-        call,
-      ) {
-        return call.method == 'transition' ? reply.future : Future.value({});
-      });
-      final player = createPlayer();
-      addTearDown(player.dispose);
-      await player.open(Media('file:///synthetic-transition-old.mp4'));
-      final changing = player.transitionTo(
-        Media('file:///synthetic-transition-next.mp4'),
+  test('cancelled transition settles before native reply and cannot restart playback', () async {
+    final reply = Completer<Map<String, Object>>();
+    messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (call) {
+      return call.method == 'transition' ? reply.future : Future.value({});
+    });
+    final player = createPlayer();
+    addTearDown(player.dispose);
+    await player.open(Media('file:///synthetic-transition-old.mp4'));
+    final changing = player.transitionTo(
+      Media('file:///synthetic-transition-next.mp4'),
+    );
+    await flush();
+    await player.cancelPending();
+    await changing.timeout(const Duration(milliseconds: 500));
+    expect(platform.disposed, [0]);
+    await player.open(Media('file:///synthetic-transition-new.mp4'));
+    final current = player.controller;
+    reply.complete(transitionResult);
+    await flush();
+    expect(player.controller, same(current));
+    expect(player.state.position, Duration.zero);
+    expect(player.state.playing, true);
+  });
+
+  test('a hanging startup seek fails before autoplay and cannot seek a replacement', () async {
+    final player = createPlayer();
+    addTearDown(player.dispose);
+    final gate = Completer<void>();
+    platform.seekReply = gate;
+    await expectLater(
+      player.open(
+        Media(
+          'file:///synthetic-startup-seek-old.mp4',
+          start: const Duration(seconds: 40),
+        ),
+      ),
+      throwsA(isA<TimeoutException>()),
+    );
+    expect(platform.played, isEmpty);
+    expect(platform.disposed, [0]);
+    expect(player.controller, isNull);
+    expect(player.state.playing, false);
+    platform.seekReply = null;
+    await player.open(Media('file:///synthetic-startup-seek-new.mp4'));
+    final current = player.controller;
+    gate.complete();
+    await flush();
+    expect(player.controller, same(current));
+    expect(player.state.position, Duration.zero);
+    expect(platform.played, [1]);
+  });
+
+  test('late play completion after cancellation and disposal cannot leave a periodic timer', () async {
+    final player = createPlayer();
+    final gate = Completer<void>();
+    final playTimers = <Timer>[];
+    try {
+      await player.open(Media('file:///synthetic-late-play.mp4'));
+      platform.playReply = gate;
+      final playing = runZoned(
+        player.play,
+        zoneSpecification: ZoneSpecification(
+          createPeriodicTimer: (self, parent, zone, duration, callback) {
+            final timer = parent.createPeriodicTimer(zone, duration, callback);
+            if (duration == const Duration(milliseconds: 100)) {
+              playTimers.add(timer);
+            }
+            return timer;
+          },
+        ),
       );
       await flush();
       await player.cancelPending();
-      await changing.timeout(const Duration(milliseconds: 500));
+      await playing.timeout(const Duration(milliseconds: 500));
+      await player.dispose();
       expect(platform.disposed, [0]);
-      await player.open(Media('file:///synthetic-transition-new.mp4'));
-      final current = player.controller;
-      reply.complete(transitionResult);
-      await flush();
-      expect(player.controller, same(current));
-      expect(player.state.position, Duration.zero);
-      expect(player.state.playing, true);
-    },
-  );
-
-  test(
-    'a hanging startup seek fails before autoplay and cannot seek a replacement',
-    () async {
-      final player = createPlayer();
-      addTearDown(player.dispose);
-      final gate = Completer<void>();
-      platform.seekReply = gate;
-      await expectLater(
-        player.open(
-          Media(
-            'file:///synthetic-startup-seek-old.mp4',
-            start: const Duration(seconds: 40),
-          ),
-        ),
-        throwsA(isA<TimeoutException>()),
-      );
-      expect(platform.played, isEmpty);
-      expect(platform.disposed, [0]);
-      expect(player.controller, isNull);
-      expect(player.state.playing, false);
-      platform.seekReply = null;
-      await player.open(Media('file:///synthetic-startup-seek-new.mp4'));
-      final current = player.controller;
       gate.complete();
       await flush();
-      expect(player.controller, same(current));
-      expect(player.state.position, Duration.zero);
-      expect(platform.played, [1]);
-    },
-  );
-
-  test(
-    'late play completion after cancellation and disposal cannot leave a periodic timer',
-    () async {
-      final player = createPlayer();
-      final gate = Completer<void>();
-      final playTimers = <Timer>[];
-      try {
-        await player.open(Media('file:///synthetic-late-play.mp4'));
-        platform.playReply = gate;
-        final playing = runZoned(
-          player.play,
-          zoneSpecification: ZoneSpecification(
-            createPeriodicTimer: (self, parent, zone, duration, callback) {
-              final timer = parent.createPeriodicTimer(
-                zone,
-                duration,
-                callback,
-              );
-              if (duration == const Duration(milliseconds: 100)) {
-                playTimers.add(timer);
-              }
-              return timer;
-            },
-          ),
-        );
-        await flush();
-        await player.cancelPending();
-        await playing.timeout(const Duration(milliseconds: 500));
-        await player.dispose();
-        expect(platform.disposed, [0]);
-        gate.complete();
-        await flush();
-        expect(
-          playTimers.where((timer) => timer.isActive),
-          isEmpty,
-          reason:
-              'A disposed controller must not create an unbounded 100ms position timer after a late play reply',
-        );
-      } finally {
-        if (!gate.isCompleted) gate.complete();
-        await player.dispose();
-        await flush();
-        for (final timer in playTimers) {
-          timer.cancel();
-        }
+      expect(
+        playTimers.where((timer) => timer.isActive),
+        isEmpty,
+        reason: 'A disposed controller must not create an unbounded 100ms position timer after a late play reply',
+      );
+    } finally {
+      if (!gate.isCompleted) gate.complete();
+      await player.dispose();
+      await flush();
+      for (final timer in playTimers) {
+        timer.cancel();
       }
-    },
-  );
+    }
+  });
 
   test(
     'a late native seek reply cannot update a disposed controller',

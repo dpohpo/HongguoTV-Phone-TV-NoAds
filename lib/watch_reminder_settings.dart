@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'watch_reminder_models.dart';
 
 class WatchReminderSettings extends StatelessWidget {
@@ -107,9 +108,8 @@ class WatchReminderSettings extends StatelessWidget {
                     initialTime: bedtime,
                     initialEntryMode: TimePickerEntryMode.input,
                     builder: (context, child) => MediaQuery(
-                      data: MediaQuery.of(
-                        context,
-                      ).copyWith(alwaysUse24HourFormat: true),
+                      data: MediaQuery.of(context)
+                          .copyWith(alwaysUse24HourFormat: true),
                       child: child!,
                     ),
                   );

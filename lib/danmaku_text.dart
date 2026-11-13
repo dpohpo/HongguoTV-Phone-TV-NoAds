@@ -271,9 +271,10 @@ danmakuExpressionParts(String text) sync* {
   }
 }
 
-String danmakuDisplayText(String text) => danmakuExpressionParts(
-  text,
-).map((part) => part.glyphs ?? part.original).join();
+String danmakuDisplayText(String text) =>
+    danmakuExpressionParts(text)
+        .map((part) => part.glyphs ?? part.original)
+        .join();
 
 String? danmakuGlyphName(String glyph) {
   for (final entry in _danmakuEmoji.entries) {

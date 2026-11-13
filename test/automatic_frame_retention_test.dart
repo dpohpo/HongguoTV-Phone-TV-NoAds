@@ -54,9 +54,8 @@ void main() {
     ).drawRect(const Rect.fromLTWH(0, 0, 32, 18), Paint()..color = Colors.blue);
     final picture = recorder.endRecording();
     final image = await picture.toImage(32, 18);
-    frame = (await image.toByteData(
-      format: ui.ImageByteFormat.png,
-    ))!.buffer.asUint8List();
+    frame = (await image.toByteData(format: ui.ImageByteFormat.png))!.buffer
+        .asUint8List();
     image.dispose();
     picture.dispose();
   });
@@ -130,33 +129,30 @@ void main() {
     },
   );
 
-  test(
-    'manual replacement clears the old frame and late callback cannot clear a newer hold',
-    () async {
-      final value = await player();
-      expect(await value.retainCurrentFrame(), true);
-      await value.transitionTo(
-        Media('file:///second.mp4'),
-        retainPreviousFrame: true,
-      );
-      await value.transitionTo(Media('file:///first-again.mp4'));
-      expect(value.frameHold.active, false);
-      expect(await value.retainCurrentFrame(), true);
-      await value.transitionTo(
-        Media('file:///third.mp4'),
-        retainPreviousFrame: true,
-      );
-      final newest = value.frameHold.image;
-      waits[1]!.complete({'firstFrame': true, 'generation': 1});
-      await settle();
-      expect(value.frameHold.image, same(newest));
-      expect(value.lastTransitionFirstFrame, false);
-      waits[3]!.complete({'firstFrame': true, 'generation': 3});
-      await settle();
-      expect(value.frameHold.active, false);
-      expect(platform.created, 1);
-    },
-  );
+  test('manual replacement clears the old frame and late callback cannot clear a newer hold', () async {
+    final value = await player();
+    expect(await value.retainCurrentFrame(), true);
+    await value.transitionTo(
+      Media('file:///second.mp4'),
+      retainPreviousFrame: true,
+    );
+    await value.transitionTo(Media('file:///first-again.mp4'));
+    expect(value.frameHold.active, false);
+    expect(await value.retainCurrentFrame(), true);
+    await value.transitionTo(
+      Media('file:///third.mp4'),
+      retainPreviousFrame: true,
+    );
+    final newest = value.frameHold.image;
+    waits[1]!.complete({'firstFrame': true, 'generation': 1});
+    await settle();
+    expect(value.frameHold.image, same(newest));
+    expect(value.lastTransitionFirstFrame, false);
+    waits[3]!.complete({'firstFrame': true, 'generation': 3});
+    await settle();
+    expect(value.frameHold.active, false);
+    expect(platform.created, 1);
+  });
 
   test(
     'already rendered target clears the hold without a second wait',
@@ -174,48 +170,42 @@ void main() {
     },
   );
 
-  test(
-    'first-frame timeout releases cover, pauses and reports recovery without fake success',
-    () async {
-      final value = await player();
-      final errors = <String>[];
-      final subscription = value.stream.error.listen(errors.add);
-      addTearDown(subscription.cancel);
-      expect(await value.retainCurrentFrame(), true);
-      await value.transitionTo(
-        Media('file:///second.mp4'),
-        retainPreviousFrame: true,
-      );
-      waits[1]!.completeError(PlatformException(code: 'transition_timeout'));
-      await settle();
-      expect(value.frameHold.image, null);
-      expect(value.frameHoldFailure.value, isNotNull);
-      expect(value.lastTransitionFirstFrame, false);
-      expect(value.state.playing, false);
-      expect(errors, hasLength(1));
-    },
-  );
+  test('first-frame timeout releases cover, pauses and reports recovery without fake success', () async {
+    final value = await player();
+    final errors = <String>[];
+    final subscription = value.stream.error.listen(errors.add);
+    addTearDown(subscription.cancel);
+    expect(await value.retainCurrentFrame(), true);
+    await value.transitionTo(
+      Media('file:///second.mp4'),
+      retainPreviousFrame: true,
+    );
+    waits[1]!.completeError(PlatformException(code: 'transition_timeout'));
+    await settle();
+    expect(value.frameHold.image, null);
+    expect(value.frameHoldFailure.value, isNotNull);
+    expect(value.lastTransitionFirstFrame, false);
+    expect(value.state.playing, false);
+    expect(errors, hasLength(1));
+  });
 
-  test(
-    'pause during pending wait clears the image and suppresses late timeout recovery',
-    () async {
-      final value = await player();
-      final errors = <String>[];
-      final subscription = value.stream.error.listen(errors.add);
-      addTearDown(subscription.cancel);
-      expect(await value.retainCurrentFrame(), true);
-      await value.transitionTo(
-        Media('file:///second.mp4'),
-        retainPreviousFrame: true,
-      );
-      await value.pause();
-      waits[1]!.completeError(PlatformException(code: 'transition_timeout'));
-      await settle();
-      expect(value.frameHold.active, false);
-      expect(value.frameHoldFailure.value, null);
-      expect(errors, isEmpty);
-    },
-  );
+  test('pause during pending wait clears the image and suppresses late timeout recovery', () async {
+    final value = await player();
+    final errors = <String>[];
+    final subscription = value.stream.error.listen(errors.add);
+    addTearDown(subscription.cancel);
+    expect(await value.retainCurrentFrame(), true);
+    await value.transitionTo(
+      Media('file:///second.mp4'),
+      retainPreviousFrame: true,
+    );
+    await value.pause();
+    waits[1]!.completeError(PlatformException(code: 'transition_timeout'));
+    await settle();
+    expect(value.frameHold.active, false);
+    expect(value.frameHoldFailure.value, null);
+    expect(errors, isEmpty);
+  });
 
   test(
     'superseded recovery cannot report error after its pause finally completes',
@@ -279,19 +269,16 @@ void main() {
     expect(platform.disposed, [0]);
   });
 
-  test(
-    'TV automatic capture opts in without enabling portrait capture or a second decoder',
-    () async {
-      final value = await player(television: true);
-      expect(await value.captureFrame(), null);
-      expect(calls.where((c) => c.method == 'captureFrame'), isEmpty);
-      expect(await value.retainCurrentFrame(), true);
-      final call = calls.singleWhere((c) => c.method == 'captureFrame');
-      expect(call.arguments['allowTelevision'], true);
-      expect(platform.views, [VideoViewType.platformView]);
-      expect(platform.peakLive, 1);
-    },
-  );
+  test('TV automatic capture opts in without enabling portrait capture or a second decoder', () async {
+    final value = await player(television: true);
+    expect(await value.captureFrame(), null);
+    expect(calls.where((c) => c.method == 'captureFrame'), isEmpty);
+    expect(await value.retainCurrentFrame(), true);
+    final call = calls.singleWhere((c) => c.method == 'captureFrame');
+    expect(call.arguments['allowTelevision'], true);
+    expect(platform.views, [VideoViewType.platformView]);
+    expect(platform.peakLive, 1);
+  });
 
   test(
     'new manual transition cancels pending capture and discards its late bytes',
@@ -496,9 +483,8 @@ Future<void> _expectFramePixel(
       if (directory != null) {
         final png = await image.toByteData(format: ui.ImageByteFormat.png);
         await Directory(directory).create(recursive: true);
-        await File(
-          '$directory/$name.png',
-        ).writeAsBytes(png!.buffer.asUint8List());
+        await File('$directory/$name.png')
+            .writeAsBytes(png!.buffer.asUint8List());
       }
       final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
       final at = (100 * image.width + 100) * 4;

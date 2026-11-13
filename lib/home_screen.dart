@@ -1,5 +1,6 @@
 import 'app_update_screen.dart';
 import 'app_origin.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -803,9 +804,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (!_selectedDramas.containsKey(drama.id) &&
         _selectedDramas.length >= BatchDownloads.maxDramas) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('一次最多选择 50 部短剧，请分批下载')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('一次最多选择 50 部短剧，请分批下载')));
       return;
     }
     setState(() {
@@ -1323,13 +1323,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SingleActivator(
                       LogicalKeyboardKey.escape,
                       includeRepeats: false,
-                    ): () =>
-                        Navigator.of(context).maybePop(),
+                    ): () => Navigator.of(context)
+                        .maybePop(),
                     const SingleActivator(
                       LogicalKeyboardKey.goBack,
                       includeRepeats: false,
-                    ): () =>
-                        Navigator.of(context).maybePop(),
+                    ): () => Navigator.of(context)
+                        .maybePop(),
                   },
                   child: scaffold,
                 ),
@@ -1571,9 +1571,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         : Text(
                                             '已经看到这里的全部剧集',
                                             style: TextStyle(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onSurfaceVariant,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
                                               fontSize: 12,
                                             ),
                                           ),

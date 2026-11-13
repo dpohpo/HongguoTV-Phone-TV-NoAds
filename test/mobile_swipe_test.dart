@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
+
 import 'package:duanju_app/app_layout.dart';
 import 'package:duanju_app/episode_swipe_surface.dart';
 import 'package:duanju_app/player_interactions.dart';
@@ -10,6 +11,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit/media_kit.dart';
+
 import 'player_fixtures.dart';
 
 void main() {
@@ -823,9 +825,8 @@ Future<void> _captureSwipe(WidgetTester tester, String name) async {
     await Directory(directory).create(recursive: true);
     final image = await boundary.toImage(pixelRatio: 1);
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    await File(
-      '$directory/$name.png',
-    ).writeAsBytes(bytes!.buffer.asUint8List());
+    await File('$directory/$name.png')
+        .writeAsBytes(bytes!.buffer.asUint8List());
     image.dispose();
   });
 }

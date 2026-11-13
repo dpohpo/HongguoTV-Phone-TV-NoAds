@@ -21,9 +21,8 @@ void main() {
     expect(const WatchReminderPreferences().dailyLimitMinutes, 240);
     expect(WatchReminderPreferences.fromJson({}).dailyLimitMinutes, 240);
     expect(
-      WatchReminderPreferences.fromJson({
-        'dailyLimitMinutes': 120,
-      }).dailyLimitMinutes,
+      WatchReminderPreferences.fromJson({'dailyLimitMinutes': 120})
+          .dailyLimitMinutes,
       120,
     );
     expect(defaults.dailyEnabled, false);
@@ -95,78 +94,72 @@ void main() {
     },
   );
 
-  test(
-    'midnight bedtime triggers only when watching then persists across midnight and reload',
-    () {
-      final e = engine();
-      expect(
-        e.advance(
-          now: DateTime(2026, 10, 15),
-          elapsed: Duration.zero,
-          watching: false,
-        ),
-        isEmpty,
-      );
-      expect(e.progress.bedtimeLatched, false);
-      expect(
-        e.advance(
-          now: DateTime(2026, 10, 15, 0, 1),
-          elapsed: Duration.zero,
-          watching: true,
-        ),
-        {WatchReminderKind.bedtime},
-      );
-      final copy = WatchReminderEngine(
-        WatchReminderProgress.fromJson(e.progress.toJson()),
-        e.preferences,
-      );
-      copy.openAppSession(
-        DateTime(2026, 10, 15, 1),
-        DateTime(2026, 10, 15, 0, 59),
-      );
-      expect(copy.progress.bedtimeLatched, true);
-      copy.advance(
-        now: DateTime(2026, 10, 16, 0, 1),
+  test('midnight bedtime triggers only when watching then persists across midnight and reload', () {
+    final e = engine();
+    expect(
+      e.advance(
+        now: DateTime(2026, 10, 15),
         elapsed: Duration.zero,
         watching: false,
-      );
-      expect(copy.progress.bedtimeLatched, true);
-    },
-  );
+      ),
+      isEmpty,
+    );
+    expect(e.progress.bedtimeLatched, false);
+    expect(
+      e.advance(
+        now: DateTime(2026, 10, 15, 0, 1),
+        elapsed: Duration.zero,
+        watching: true,
+      ),
+      {WatchReminderKind.bedtime},
+    );
+    final copy = WatchReminderEngine(
+      WatchReminderProgress.fromJson(e.progress.toJson()),
+      e.preferences,
+    );
+    copy.openAppSession(
+      DateTime(2026, 10, 15, 1),
+      DateTime(2026, 10, 15, 0, 59),
+    );
+    expect(copy.progress.bedtimeLatched, true);
+    copy.advance(
+      now: DateTime(2026, 10, 16, 0, 1),
+      elapsed: Duration.zero,
+      watching: false,
+    );
+    expect(copy.progress.bedtimeLatched, true);
+  });
 
-  test(
-    'strictly greater than four hours releases previous bedtime but not daily totals',
-    () {
-      for (final gap in [
-        const Duration(hours: 4),
-        const Duration(hours: 4, seconds: 1),
-      ]) {
-        final e = engine(start: DateTime(2026, 10, 15));
-        e.advance(
-          now: DateTime(2026, 10, 15, 1),
-          elapsed: const Duration(hours: 1),
-          watching: true,
-        );
-        expect(e.progress.bedtimeLatched, true);
-        e.openAppSession(
-          DateTime(2026, 10, 15, 1).add(gap),
-          DateTime(2026, 10, 15, 1),
-        );
-        expect(e.progress.bedtimeLatched, gap == const Duration(hours: 4));
-        expect(e.progress.watchedMs, 3600000);
-        final due = e.advance(
-          now: DateTime(2026, 10, 15, 1).add(gap),
-          elapsed: Duration.zero,
-          watching: true,
-        );
-        expect(due.contains(WatchReminderKind.daily), true);
-        expect(
-          due.contains(WatchReminderKind.bedtime),
-          gap == const Duration(hours: 4),
-        );
-      }
-    },
-  );
+  test('strictly greater than four hours releases previous bedtime but not daily totals', () {
+    for (final gap in [
+      const Duration(hours: 4),
+      const Duration(hours: 4, seconds: 1),
+    ]) {
+      final e = engine(start: DateTime(2026, 10, 15));
+      e.advance(
+        now: DateTime(2026, 10, 15, 1),
+        elapsed: const Duration(hours: 1),
+        watching: true,
+      );
+      expect(e.progress.bedtimeLatched, true);
+      e.openAppSession(
+        DateTime(2026, 10, 15, 1).add(gap),
+        DateTime(2026, 10, 15, 1),
+      );
+      expect(e.progress.bedtimeLatched, gap == const Duration(hours: 4));
+      expect(e.progress.watchedMs, 3600000);
+      final due = e.advance(
+        now: DateTime(2026, 10, 15, 1).add(gap),
+        elapsed: Duration.zero,
+        watching: true,
+      );
+      expect(due.contains(WatchReminderKind.daily), true);
+      expect(
+        due.contains(WatchReminderKind.bedtime),
+        gap == const Duration(hours: 4),
+      );
+    }
+  });
 
   test(
     'long closure skips stale bedtime and schedules the next local bedtime',
@@ -185,57 +178,52 @@ void main() {
     },
   );
 
-  test(
-    'overlap combines both reasons, repeat intervals are independent and configurable',
-    () {
-      final e = engine(
-        prefs: const WatchReminderPreferences(
-          dailyEnabled: true,
-          dailyLimitMinutes: 1,
-          dailyRepeatMinutes: 2,
-          bedtimeEnabled: true,
-          bedtimeMinute: 60,
-          bedtimeRepeatMinutes: 5,
-        ),
-        start: DateTime(2026, 10, 15, 0, 59),
-      );
-      final now = DateTime(2026, 10, 15, 1);
-      final due = e.advance(
-        now: now,
-        elapsed: const Duration(minutes: 1),
+  test('overlap combines both reasons, repeat intervals are independent and configurable', () {
+    final e = engine(
+      prefs: const WatchReminderPreferences(
+        dailyEnabled: true,
+        dailyLimitMinutes: 1,
+        dailyRepeatMinutes: 2,
+        bedtimeEnabled: true,
+        bedtimeMinute: 60,
+        bedtimeRepeatMinutes: 5,
+      ),
+      start: DateTime(2026, 10, 15, 0, 59),
+    );
+    final now = DateTime(2026, 10, 15, 1);
+    final due = e.advance(
+      now: now,
+      elapsed: const Duration(minutes: 1),
+      watching: true,
+    );
+    expect(due, WatchReminderKind.values.toSet());
+    e.markShown(due, now);
+    expect(
+      e.advance(
+        now: now.add(const Duration(minutes: 1)),
+        elapsed: Duration.zero,
         watching: true,
-      );
-      expect(due, WatchReminderKind.values.toSet());
-      e.markShown(due, now);
-      expect(
-        e.advance(
-          now: now.add(const Duration(minutes: 1)),
-          elapsed: Duration.zero,
-          watching: true,
-        ),
-        isEmpty,
-      );
-      expect(
-        e.advance(
-          now: now.add(const Duration(minutes: 2)),
-          elapsed: Duration.zero,
-          watching: true,
-        ),
-        {WatchReminderKind.daily},
-      );
-      e.markShown({
-        WatchReminderKind.daily,
-      }, now.add(const Duration(minutes: 2)));
-      expect(
-        e.advance(
-          now: now.add(const Duration(minutes: 5)),
-          elapsed: Duration.zero,
-          watching: true,
-        ),
-        WatchReminderKind.values.toSet(),
-      );
-    },
-  );
+      ),
+      isEmpty,
+    );
+    expect(
+      e.advance(
+        now: now.add(const Duration(minutes: 2)),
+        elapsed: Duration.zero,
+        watching: true,
+      ),
+      {WatchReminderKind.daily},
+    );
+    e.markShown({WatchReminderKind.daily}, now.add(const Duration(minutes: 2)));
+    expect(
+      e.advance(
+        now: now.add(const Duration(minutes: 5)),
+        elapsed: Duration.zero,
+        watching: true,
+      ),
+      WatchReminderKind.values.toSet(),
+    );
+  });
 
   test(
     'turning off one reminder leaves the other and actual daily time intact',
@@ -263,22 +251,19 @@ void main() {
     },
   );
 
-  test(
-    'clock rollback never subtracts watched time or creates an infinite repeat delay',
-    () {
-      final e = engine();
-      final now = DateTime(2026, 10, 14, 23);
-      e.advance(now: now, elapsed: const Duration(hours: 1), watching: true);
-      e.markShown({WatchReminderKind.daily}, now);
-      expect(
-        e.advance(
-          now: now.subtract(const Duration(minutes: 5)),
-          elapsed: const Duration(seconds: -1),
-          watching: true,
-        ),
-        {WatchReminderKind.daily},
-      );
-      expect(e.progress.watchedMs, 3600000);
-    },
-  );
+  test('clock rollback never subtracts watched time or creates an infinite repeat delay', () {
+    final e = engine();
+    final now = DateTime(2026, 10, 14, 23);
+    e.advance(now: now, elapsed: const Duration(hours: 1), watching: true);
+    e.markShown({WatchReminderKind.daily}, now);
+    expect(
+      e.advance(
+        now: now.subtract(const Duration(minutes: 5)),
+        elapsed: const Duration(seconds: -1),
+        watching: true,
+      ),
+      {WatchReminderKind.daily},
+    );
+    expect(e.progress.watchedMs, 3600000);
+  });
 }

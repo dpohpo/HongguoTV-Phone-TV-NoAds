@@ -400,32 +400,29 @@ void main() {
     },
   );
 
-  test(
-    'layout measures lossless expression content once including the unchanged heart count',
-    () {
-      final measured = <String>[];
-      const item = DanmakuItem(
-        id: 'one',
-        text: '爽文[爽]【戳手手】[未知]',
-        timeMs: 1234,
-        repeatCount: 3,
-      );
-      final flights = planDanmaku(
-        [item],
-        width: 800,
-        rows: 2,
-        measure: (text) {
-          measured.add(text);
-          return 180;
-        },
-      );
-      expect(flights.single.text, '爽文[爽]【戳手手】[未知]  ♥ 3');
-      expect(measured, [flights.single.text]);
-      expect(flights.single.width, 188);
-      expect(flights.single.item, same(item));
-      expect(flights.single.lifetimeMs, danmakuLifetimeMs);
-    },
-  );
+  test('layout measures lossless expression content once including the unchanged heart count', () {
+    final measured = <String>[];
+    const item = DanmakuItem(
+      id: 'one',
+      text: '爽文[爽]【戳手手】[未知]',
+      timeMs: 1234,
+      repeatCount: 3,
+    );
+    final flights = planDanmaku(
+      [item],
+      width: 800,
+      rows: 2,
+      measure: (text) {
+        measured.add(text);
+        return 180;
+      },
+    );
+    expect(flights.single.text, '爽文[爽]【戳手手】[未知]  ♥ 3');
+    expect(measured, [flights.single.text]);
+    expect(flights.single.width, 188);
+    expect(flights.single.item, same(item));
+    expect(flights.single.lifetimeMs, danmakuLifetimeMs);
+  });
 
   test(
     'long expression lines keep whole graphemes and existing clipping limit',

@@ -290,34 +290,31 @@ void main() {
     },
   );
 
-  test(
-    'higher Windows semantic version is not hidden by the same-build skip',
-    () async {
-      final (updates, _, transport) = create(windows: true);
-      await updates.check();
-      await updates.skipCurrentVersion();
-      const version = '0.1.15';
-      const tag = 'windows-v$version-38';
-      const name = 'HongguoTV-$version-windows-x64.zip';
-      transport.data = {
-        ...transport.data,
-        'tag_name': tag,
-        'assets': [
-          {
-            ...(transport.data['assets'] as List).single as Map,
-            'name': name,
-            'browser_download_url':
-                'https://github.com/$updateRepository/releases/download/$tag/$name',
-          },
-        ],
-      };
-      clock = clock.add(const Duration(hours: 13));
-      await updates.check();
-      expect(updates.release!.version, version);
-      expect(updates.release!.code, 38);
-      expect(updates.showAutomaticPrompt, isTrue);
-    },
-  );
+  test('higher Windows semantic version is not hidden by the same-build skip', () async {
+    final (updates, _, transport) = create(windows: true);
+    await updates.check();
+    await updates.skipCurrentVersion();
+    const version = '0.1.15';
+    const tag = 'windows-v$version-38';
+    const name = 'HongguoTV-$version-windows-x64.zip';
+    transport.data = {
+      ...transport.data,
+      'tag_name': tag,
+      'assets': [
+        {
+          ...(transport.data['assets'] as List).single as Map,
+          'name': name,
+          'browser_download_url':
+              'https://github.com/$updateRepository/releases/download/$tag/$name',
+        },
+      ],
+    };
+    clock = clock.add(const Duration(hours: 13));
+    await updates.check();
+    expect(updates.release!.version, version);
+    expect(updates.release!.code, 38);
+    expect(updates.showAutomaticPrompt, isTrue);
+  });
 
   test('skipped records are isolated between Windows and Android', () async {
     final (android, _, _) = create();
@@ -339,30 +336,27 @@ void main() {
     expect(restoredWindows.currentVersionSkipped, isTrue);
   });
 
-  test(
-    'Android skip identity ignores ABI offset while asset selection remains exact',
-    () async {
-      final (arm64, _, _) = create();
-      await arm64.check();
-      await arm64.skipCurrentVersion();
-      for (final entry in updateAbiOffsets.entries) {
-        final (updates, platform, _) = create(
-          app: InstalledApp(
-            version: '0.1.5',
-            code: entry.value + 27,
-            abi: entry.key,
-          ),
-        );
-        await updates.check(manual: true);
-        expect(updates.currentVersionSkipped, isTrue);
-        expect(updates.release!.code, entry.value + 28);
-        expect(updates.release!.abi, entry.key);
-        expect(updates.release!.url.path, endsWith('-${entry.key}.apk'));
-        await updates.download();
-        expect(platform.validatedCodes, [entry.value + 28]);
-      }
-    },
-  );
+  test('Android skip identity ignores ABI offset while asset selection remains exact', () async {
+    final (arm64, _, _) = create();
+    await arm64.check();
+    await arm64.skipCurrentVersion();
+    for (final entry in updateAbiOffsets.entries) {
+      final (updates, platform, _) = create(
+        app: InstalledApp(
+          version: '0.1.5',
+          code: entry.value + 27,
+          abi: entry.key,
+        ),
+      );
+      await updates.check(manual: true);
+      expect(updates.currentVersionSkipped, isTrue);
+      expect(updates.release!.code, entry.value + 28);
+      expect(updates.release!.abi, entry.key);
+      expect(updates.release!.url.path, endsWith('-${entry.key}.apk'));
+      await updates.download();
+      expect(platform.validatedCodes, [entry.value + 28]);
+    }
+  });
 
   test(
     'a changed Android ABI cannot reuse a READY package from the old ABI',
@@ -388,55 +382,49 @@ void main() {
     },
   );
 
-  test(
-    'a failed refresh preserves a valid READY package without reviving stale offers',
-    () async {
-      final (updates, platform, transport) = create();
-      await updates.check();
-      await updates.download();
-      await updates.skipCurrentVersion();
-      transport.failure = const SocketException('synthetic offline');
-      await updates.check(manual: true);
-      expect(updates.stage, UpdateStage.ready);
-      expect(updates.currentVersionSkipped, isTrue);
-      expect(updates.message, contains('已校验的安装包保留'));
-      await updates.install();
-      expect(platform.installedCodes, [2028]);
-      platform.app = const InstalledApp(
-        version: '0.1.6',
-        code: 2028,
-        abi: 'arm64-v8a',
-      );
-      await updates.check(manual: true);
-      expect(updates.release, isNull);
-      expect(updates.stage, UpdateStage.failed);
-      await updates.install();
-      expect(platform.installs, 1);
-    },
-  );
+  test('a failed refresh preserves a valid READY package without reviving stale offers', () async {
+    final (updates, platform, transport) = create();
+    await updates.check();
+    await updates.download();
+    await updates.skipCurrentVersion();
+    transport.failure = const SocketException('synthetic offline');
+    await updates.check(manual: true);
+    expect(updates.stage, UpdateStage.ready);
+    expect(updates.currentVersionSkipped, isTrue);
+    expect(updates.message, contains('已校验的安装包保留'));
+    await updates.install();
+    expect(platform.installedCodes, [2028]);
+    platform.app = const InstalledApp(
+      version: '0.1.6',
+      code: 2028,
+      abi: 'arm64-v8a',
+    );
+    await updates.check(manual: true);
+    expect(updates.release, isNull);
+    expect(updates.stage, UpdateStage.failed);
+    await updates.install();
+    expect(platform.installs, 1);
+  });
 
-  test(
-    'changed hash under the same version invalidates READY without changing the skip',
-    () async {
-      final (updates, platform, transport) = create();
-      await updates.check();
-      await updates.download();
-      await updates.skipCurrentVersion();
-      final assets = transport.data['assets'] as List;
-      transport.data = {
-        ...transport.data,
-        'assets': [
-          for (final asset in assets)
-            {...asset as Map, 'digest': 'sha256:${'b' * 64}'},
-        ],
-      };
-      await updates.check(manual: true);
-      expect(updates.currentVersionSkipped, isTrue);
-      expect(updates.stage, UpdateStage.available);
-      await updates.install();
-      expect(platform.installs, 0);
-    },
-  );
+  test('changed hash under the same version invalidates READY without changing the skip', () async {
+    final (updates, platform, transport) = create();
+    await updates.check();
+    await updates.download();
+    await updates.skipCurrentVersion();
+    final assets = transport.data['assets'] as List;
+    transport.data = {
+      ...transport.data,
+      'assets': [
+        for (final asset in assets)
+          {...asset as Map, 'digest': 'sha256:${'b' * 64}'},
+      ],
+    };
+    await updates.check(manual: true);
+    expect(updates.currentVersionSkipped, isTrue);
+    expect(updates.stage, UpdateStage.available);
+    await updates.install();
+    expect(platform.installs, 0);
+  });
 
   for (final failure in ['false', 'throw', 'after']) {
     test(

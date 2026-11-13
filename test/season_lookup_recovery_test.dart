@@ -3,6 +3,7 @@ import 'package:duanju_app/models.dart';
 import 'package:duanju_app/next_season_resolver.dart';
 import 'package:duanju_app/series_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import 'fixtures.dart';
 
 const anchor = Drama(id: 'hongguo:1', source: 'hongguo', title: '合成故事（第一季）');
@@ -57,9 +58,8 @@ void main() {
   });
   test('automatic next season uses the same targeted recovery', () async {
     final repository = TargetedSeasonRepository();
-    final result = await NextSeasonResolver(
-      repository,
-    ).resolve(anchor, knownDramas: [], isCurrent: () => true);
+    final result = await NextSeasonResolver(repository)
+        .resolve(anchor, knownDramas: [], isCurrent: () => true);
     expect(result!.drama.id, next.id);
   });
 }

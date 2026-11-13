@@ -95,61 +95,56 @@ void main() {
     },
   );
 
-  test(
-    'opacity and reminder settings survive restart and backup without changing video speed',
-    () async {
-      final (store, platform) = await create();
-      final value = const PlaybackPreferences(
-        speed: 1.5,
-        danmakuSpeed: 1.25,
-        danmakuOpacity: .35,
-        reminders: WatchReminderPreferences(
-          dailyEnabled: true,
-          dailyLimitMinutes: 90,
-          dailyRepeatMinutes: 3,
-          bedtimeEnabled: true,
-          bedtimeMinute: 1380,
-          bedtimeRepeatMinutes: 7,
-        ),
-      );
-      await store.setPlaybackPreferences(value);
-      await store.saveWatchReminderProgress(
-        'default',
-        jsonEncode(
-          WatchReminderProgress(
-            day: '2026-10-14',
-            watchedMs: 3600000,
-            bedtimeLatched: true,
-          ).toJson(),
-        ),
-      );
-      final restored = await restart(platform);
-      expect(restored.playbackPreferences.toJson(), value.toJson());
-      expect(restored.watchReminderProgress.watchedMs, 3600000);
-      final backup = await restored.exportBackup();
-      await restored.setPlaybackPreferences(const PlaybackPreferences());
-      await restored.importBackup(backup);
-      expect(restored.playbackPreferences.toJson(), value.toJson());
-      expect(restored.watchReminderProgress.bedtimeLatched, true);
-      expect(
-        PlaybackPreferences.fromJson({
-          'danmakuOpacity': 'broken',
-        }).danmakuOpacity,
-        isNull,
-      );
-      expect(
-        const PlaybackPreferences().effectiveDanmakuOpacity(mobile: true),
-        .95,
-      );
-      expect(
-        const PlaybackPreferences().effectiveDanmakuOpacity(
-          mobile: false,
-          television: true,
-        ),
-        .55,
-      );
-    },
-  );
+  test('opacity and reminder settings survive restart and backup without changing video speed', () async {
+    final (store, platform) = await create();
+    final value = const PlaybackPreferences(
+      speed: 1.5,
+      danmakuSpeed: 1.25,
+      danmakuOpacity: .35,
+      reminders: WatchReminderPreferences(
+        dailyEnabled: true,
+        dailyLimitMinutes: 90,
+        dailyRepeatMinutes: 3,
+        bedtimeEnabled: true,
+        bedtimeMinute: 1380,
+        bedtimeRepeatMinutes: 7,
+      ),
+    );
+    await store.setPlaybackPreferences(value);
+    await store.saveWatchReminderProgress(
+      'default',
+      jsonEncode(
+        WatchReminderProgress(
+          day: '2026-10-14',
+          watchedMs: 3600000,
+          bedtimeLatched: true,
+        ).toJson(),
+      ),
+    );
+    final restored = await restart(platform);
+    expect(restored.playbackPreferences.toJson(), value.toJson());
+    expect(restored.watchReminderProgress.watchedMs, 3600000);
+    final backup = await restored.exportBackup();
+    await restored.setPlaybackPreferences(const PlaybackPreferences());
+    await restored.importBackup(backup);
+    expect(restored.playbackPreferences.toJson(), value.toJson());
+    expect(restored.watchReminderProgress.bedtimeLatched, true);
+    expect(
+      PlaybackPreferences.fromJson({'danmakuOpacity': 'broken'}).danmakuOpacity,
+      isNull,
+    );
+    expect(
+      const PlaybackPreferences().effectiveDanmakuOpacity(mobile: true),
+      .95,
+    );
+    expect(
+      const PlaybackPreferences().effectiveDanmakuOpacity(
+        mobile: false,
+        television: true,
+      ),
+      .55,
+    );
+  });
 
   for (final failure in ['false', 'throw', 'after']) {
     test(
@@ -267,42 +262,35 @@ void main() {
     },
   );
 
-  test(
-    'queued mutations preserve all successful records and isolate playback preferences',
-    () async {
-      final (store, platform) = await create();
-      await Future.wait([
-        store.toggleFavorite(drama),
-        store.toggleFavorite(next),
-      ]);
-      await store.saveProfile(
-        id: 'default',
-        name: '管理员',
-        sources: [],
-        download: true,
-        pin: 'abcdef12',
-      );
-      await store.setPlaybackPreferences(
-        const PlaybackPreferences(speed: 1.5, quality: 720, autoAdvance: false),
-      );
-      await store.saveProfile(
-        name: '访客',
-        sources: ['hongguo'],
-        download: false,
-      );
-      final visitor = store.profiles.firstWhere((profile) => !profile.admin);
-      await store.switchProfile(visitor.id);
-      expect(store.playbackPreferences.speed, 1);
-      await store.setPlaybackPreferences(const PlaybackPreferences(speed: .75));
-      await store.switchProfile('default', pin: 'abcdef12');
-      expect(store.playbackPreferences.speed, 1.5);
-      final restored = await restart(platform);
-      expect(restored.locked, isTrue);
-      await restored.switchProfile('default', pin: 'abcdef12');
-      expect(restored.favorites.length, 2);
-      expect(restored.playbackPreferences.autoAdvance, isFalse);
-    },
-  );
+  test('queued mutations preserve all successful records and isolate playback preferences', () async {
+    final (store, platform) = await create();
+    await Future.wait([
+      store.toggleFavorite(drama),
+      store.toggleFavorite(next),
+    ]);
+    await store.saveProfile(
+      id: 'default',
+      name: '管理员',
+      sources: [],
+      download: true,
+      pin: 'abcdef12',
+    );
+    await store.setPlaybackPreferences(
+      const PlaybackPreferences(speed: 1.5, quality: 720, autoAdvance: false),
+    );
+    await store.saveProfile(name: '访客', sources: ['hongguo'], download: false);
+    final visitor = store.profiles.firstWhere((profile) => !profile.admin);
+    await store.switchProfile(visitor.id);
+    expect(store.playbackPreferences.speed, 1);
+    await store.setPlaybackPreferences(const PlaybackPreferences(speed: .75));
+    await store.switchProfile('default', pin: 'abcdef12');
+    expect(store.playbackPreferences.speed, 1.5);
+    final restored = await restart(platform);
+    expect(restored.locked, isTrue);
+    await restored.switchProfile('default', pin: 'abcdef12');
+    expect(restored.favorites.length, 2);
+    expect(restored.playbackPreferences.autoAdvance, isFalse);
+  });
 
   for (final records in <Object>[
     'broken-json',

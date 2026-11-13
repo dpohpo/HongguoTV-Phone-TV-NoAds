@@ -363,15 +363,13 @@ class DramaTile extends StatelessWidget {
   final VoidCallback? onLongPress;
 
   static double titleHeight(BuildContext context) =>
-      MediaQuery.textScalerOf(
-        context,
-      ).scale(AppLayout.isTelevision(context) ? 17 : 14) *
+      MediaQuery.textScalerOf(context)
+          .scale(AppLayout.isTelevision(context) ? 17 : 14) *
       2.6;
 
   static double subtitleHeight(BuildContext context) =>
-      MediaQuery.textScalerOf(
-        context,
-      ).scale(AppLayout.isTelevision(context) ? 14 : 12) *
+      MediaQuery.textScalerOf(context)
+          .scale(AppLayout.isTelevision(context) ? 14 : 12) *
       1.3;
 
   static double extentFor(BuildContext context, double width) =>
@@ -437,9 +435,10 @@ class DramaTile extends StatelessWidget {
                         color: const Color(0xFFBF245B),
                         textStyle: TextStyle(
                           color: Colors.white,
-                          fontFamily: Theme.of(
-                            context,
-                          ).textTheme.labelSmall?.fontFamily,
+                          fontFamily: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.fontFamily,
                           fontSize: television ? 12 : 11,
                           fontWeight: FontWeight.w700,
                           height: 1,

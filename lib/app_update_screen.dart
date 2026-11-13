@@ -6,9 +6,8 @@ import 'app_layout.dart';
 import 'app_updates.dart';
 
 void openAppUpdates(BuildContext context) {
-  Navigator.of(
-    context,
-  ).push(MaterialPageRoute<void>(builder: (_) => const AppUpdateScreen()));
+  Navigator.of(context)
+      .push(MaterialPageRoute<void>(builder: (_) => const AppUpdateScreen()));
 }
 
 class AppUpdateTile extends StatelessWidget {

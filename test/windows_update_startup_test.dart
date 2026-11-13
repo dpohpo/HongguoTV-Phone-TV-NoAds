@@ -50,27 +50,23 @@ void main() {
     executable: executable,
   );
 
-  test(
-    'CRLF plan in Chinese and spaced paths confirms the exact nonce only after ready',
-    () async {
-      await writePlan(ending: '\r\n');
-      await load();
-      final ack = File(p.join(transaction.path, 'ack.txt'));
-      expect(await ack.exists(), isFalse);
-      expect(
-        jsonDecode(
-          await File(
-            p.join(transaction.path, 'startup-$windowsBuildNumber.json'),
-          ).readAsString(),
-        )['phase'],
-        'validated',
-      );
-      await WindowsUpdateRuntime.startupPhase('first-frame');
-      expect(await ack.exists(), isFalse);
-      expect(await WindowsUpdateRuntime.ready(), isNull);
-      expect(await ack.readAsString(), nonce);
-    },
-  );
+  test('CRLF plan in Chinese and spaced paths confirms the exact nonce only after ready', () async {
+    await writePlan(ending: '\r\n');
+    await load();
+    final ack = File(p.join(transaction.path, 'ack.txt'));
+    expect(await ack.exists(), isFalse);
+    expect(
+      jsonDecode(
+        await File(p.join(transaction.path, 'startup-$windowsBuildNumber.json'))
+            .readAsString(),
+      )['phase'],
+      'validated',
+    );
+    await WindowsUpdateRuntime.startupPhase('first-frame');
+    expect(await ack.exists(), isFalse);
+    expect(await WindowsUpdateRuntime.ready(), isNull);
+    expect(await ack.readAsString(), nonce);
+  });
   test(
     'unrecognized nonce, install root and support namespace never confirm',
     () async {
@@ -95,20 +91,16 @@ void main() {
       }
     },
   );
-  test(
-    'rollback startup keeps old build unconfirmed and restores one paused resume token',
-    () async {
-      await writePlan(build: windowsBuildNumber + 1);
-      final resume = {'profile': 'default', 'position': 43.5, 'index': 1};
-      await File(
-        p.join(transaction.path, 'resume.json'),
-      ).writeAsString(jsonEncode(resume));
-      await load();
-      expect(await WindowsUpdateRuntime.ready(), resume);
-      expect(await File(p.join(transaction.path, 'ack.txt')).exists(), isFalse);
-      expect(await WindowsUpdateRuntime.ready(), isNull);
-    },
-  );
+  test('rollback startup keeps old build unconfirmed and restores one paused resume token', () async {
+    await writePlan(build: windowsBuildNumber + 1);
+    final resume = {'profile': 'default', 'position': 43.5, 'index': 1};
+    await File(p.join(transaction.path, 'resume.json'))
+        .writeAsString(jsonEncode(resume));
+    await load();
+    expect(await WindowsUpdateRuntime.ready(), resume);
+    expect(await File(p.join(transaction.path, 'ack.txt')).exists(), isFalse);
+    expect(await WindowsUpdateRuntime.ready(), isNull);
+  });
   test(
     'malformed and duplicate plan fields fail before startup confirmation',
     () async {

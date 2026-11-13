@@ -581,166 +581,142 @@ void main() {
     expect(platform.created, 1);
   });
 
-  test(
-    'twenty automatic transitions retain one initialized controller and reset each episode',
-    () async {
-      final ids = <int>[];
-      messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (
-        call,
-      ) async {
-        if (call.method != 'transition') return {};
-        ids.add((call.arguments as Map)['playerId'] as int);
-        expect(
-          (call.arguments as Map)['headers']['Referer'],
-          'https://synthetic.test',
-        );
-        return response;
-      });
-      final player = LunaExoPlayer();
-      addTearDown(player.dispose);
-      await player.open(Media('file:///synthetic-1.mp4'));
-      final controller = player.controller;
-      for (var episode = 2; episode <= 21; episode++) {
-        await player.transitionTo(
-          Media(
-            'file:///synthetic-$episode.mp4',
-            httpHeaders: {'Referer': 'https://synthetic.test'},
-          ),
-        );
-        expect(player.controller, same(controller));
-        expect(player.state.duration, const Duration(seconds: 90));
-        expect(player.state.position, Duration.zero);
-        expect(player.state.completed, false);
-        expect(player.state.playing, true);
-      }
-      expect(ids, List.filled(20, 0));
-      expect(platform.created, 1);
-      expect(platform.disposed, isEmpty);
-      expect(platform.peakLive, 1);
-    },
-  );
-  test(
-    'first frame wait keeps old view attached and background pause survives completion',
-    () async {
-      final pending = Completer<Map<String, Object>>();
-      final started = Completer<void>();
-      messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (
-        call,
-      ) {
-        if (call.method != 'transition') return Future.value({});
-        started.complete();
-        return pending.future;
-      });
-      final player = LunaExoPlayer();
-      addTearDown(player.dispose);
-      await player.open(Media('file:///synthetic-1.mp4'));
-      final controller = player.controller;
-      final changing = player.transitionTo(Media('file:///synthetic-2.mp4'));
-      await started.future;
-      expect(player.controller, same(controller));
-      expect(controller!.value.isInitialized, true);
-      expect(platform.disposed, isEmpty);
-      await player.pause();
-      pending.complete(response);
-      await changing;
-      expect(player.state.playing, false);
-      expect(player.controller, same(controller));
-    },
-  );
-  test(
-    'failed transition falls back with old controller released before recreation',
-    () async {
-      messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (
-        call,
-      ) async {
-        if (call.method == 'transition')
-          throw PlatformException(code: 'transition_failed');
-        return {};
-      });
-      final player = LunaExoPlayer();
-      addTearDown(player.dispose);
-      await player.open(Media('file:///synthetic-1.mp4'));
-      await player.transitionTo(Media('file:///synthetic-2.mp4'));
-      expect(platform.created, 2);
-      expect(platform.disposed, [0]);
-      expect(platform.peakLive, 1);
-      expect(player.state.playing, true);
-    },
-  );
-  test(
-    'missing native reply has a deadline and late reply cannot reset the replacement',
-    () async {
-      final pending = Completer<Map<String, Object>>();
-      messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (
-        call,
-      ) {
-        return call.method == 'transition' ? pending.future : Future.value({});
-      });
-      final player = LunaExoPlayer(
-        transitionTimeout: const Duration(milliseconds: 30),
+  test('twenty automatic transitions retain one initialized controller and reset each episode', () async {
+    final ids = <int>[];
+    messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (
+      call,
+    ) async {
+      if (call.method != 'transition') return {};
+      ids.add((call.arguments as Map)['playerId'] as int);
+      expect(
+        (call.arguments as Map)['headers']['Referer'],
+        'https://synthetic.test',
       );
-      addTearDown(player.dispose);
-      await player.open(Media('file:///synthetic-1.mp4'));
-      await player.transitionTo(Media('file:///synthetic-2.mp4'));
-      final current = player.controller;
-      expect(platform.created, 2);
-      expect(platform.disposed, [0]);
-      expect(player.state.playing, true);
-      pending.complete(response);
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(player.controller, same(current));
-      expect(platform.created, 2);
-    },
-  );
-
-  test(
-    'failed preloaded transition requests fresh resolution without reopening the same URL',
-    () async {
-      messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (
-        call,
-      ) async {
-        if (call.method == 'transition')
-          throw PlatformException(code: 'transition_timeout');
-        return {};
-      });
-      final player = LunaExoPlayer();
-      addTearDown(player.dispose);
-      await player.open(Media('file:///synthetic-1.mp4'));
-      await expectLater(
-        player.transitionTo(
-          Media('file:///expired-cache.mp4'),
-          reopenOnFailure: false,
+      return response;
+    });
+    final player = LunaExoPlayer();
+    addTearDown(player.dispose);
+    await player.open(Media('file:///synthetic-1.mp4'));
+    final controller = player.controller;
+    for (var episode = 2; episode <= 21; episode++) {
+      await player.transitionTo(
+        Media(
+          'file:///synthetic-$episode.mp4',
+          httpHeaders: {'Referer': 'https://synthetic.test'},
         ),
-        throwsA(isA<PlatformException>()),
       );
-      expect(platform.created, 1);
-      expect(player.canTransition, false);
-      expect(platform.disposed, [0]);
-    },
-  );
+      expect(player.controller, same(controller));
+      expect(player.state.duration, const Duration(seconds: 90));
+      expect(player.state.position, Duration.zero);
+      expect(player.state.completed, false);
+      expect(player.state.playing, true);
+    }
+    expect(ids, List.filled(20, 0));
+    expect(platform.created, 1);
+    expect(platform.disposed, isEmpty);
+    expect(platform.peakLive, 1);
+  });
+  test('first frame wait keeps old view attached and background pause survives completion', () async {
+    final pending = Completer<Map<String, Object>>();
+    final started = Completer<void>();
+    messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (call) {
+      if (call.method != 'transition') return Future.value({});
+      started.complete();
+      return pending.future;
+    });
+    final player = LunaExoPlayer();
+    addTearDown(player.dispose);
+    await player.open(Media('file:///synthetic-1.mp4'));
+    final controller = player.controller;
+    final changing = player.transitionTo(Media('file:///synthetic-2.mp4'));
+    await started.future;
+    expect(player.controller, same(controller));
+    expect(controller!.value.isInitialized, true);
+    expect(platform.disposed, isEmpty);
+    await player.pause();
+    pending.complete(response);
+    await changing;
+    expect(player.state.playing, false);
+    expect(player.controller, same(controller));
+  });
+  test('failed transition falls back with old controller released before recreation', () async {
+    messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (
+      call,
+    ) async {
+      if (call.method == 'transition')
+        throw PlatformException(code: 'transition_failed');
+      return {};
+    });
+    final player = LunaExoPlayer();
+    addTearDown(player.dispose);
+    await player.open(Media('file:///synthetic-1.mp4'));
+    await player.transitionTo(Media('file:///synthetic-2.mp4'));
+    expect(platform.created, 2);
+    expect(platform.disposed, [0]);
+    expect(platform.peakLive, 1);
+    expect(player.state.playing, true);
+  });
+  test('missing native reply has a deadline and late reply cannot reset the replacement', () async {
+    final pending = Completer<Map<String, Object>>();
+    messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (call) {
+      return call.method == 'transition' ? pending.future : Future.value({});
+    });
+    final player = LunaExoPlayer(
+      transitionTimeout: const Duration(milliseconds: 30),
+    );
+    addTearDown(player.dispose);
+    await player.open(Media('file:///synthetic-1.mp4'));
+    await player.transitionTo(Media('file:///synthetic-2.mp4'));
+    final current = player.controller;
+    expect(platform.created, 2);
+    expect(platform.disposed, [0]);
+    expect(player.state.playing, true);
+    pending.complete(response);
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(player.controller, same(current));
+    expect(platform.created, 2);
+  });
 
-  test(
-    'leaving during first frame wait does not resurrect the disposed controller',
-    () async {
-      final pending = Completer<Map<String, Object>>();
-      final started = Completer<void>();
-      messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (
-        call,
-      ) {
-        if (call.method != 'transition') return Future.value({});
-        started.complete();
-        return pending.future;
-      });
-      final player = LunaExoPlayer();
-      await player.open(Media('file:///synthetic-1.mp4'));
-      final changing = player.transitionTo(Media('file:///synthetic-2.mp4'));
-      await started.future;
-      await player.dispose();
-      pending.complete(response);
-      await changing;
-      expect(platform.created, 1);
-      expect(platform.disposed, [0]);
-      expect(player.controller, isNull);
-    },
-  );
+  test('failed preloaded transition requests fresh resolution without reopening the same URL', () async {
+    messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (
+      call,
+    ) async {
+      if (call.method == 'transition')
+        throw PlatformException(code: 'transition_timeout');
+      return {};
+    });
+    final player = LunaExoPlayer();
+    addTearDown(player.dispose);
+    await player.open(Media('file:///synthetic-1.mp4'));
+    await expectLater(
+      player.transitionTo(
+        Media('file:///expired-cache.mp4'),
+        reopenOnFailure: false,
+      ),
+      throwsA(isA<PlatformException>()),
+    );
+    expect(platform.created, 1);
+    expect(player.canTransition, false);
+    expect(platform.disposed, [0]);
+  });
+
+  test('leaving during first frame wait does not resurrect the disposed controller', () async {
+    final pending = Completer<Map<String, Object>>();
+    final started = Completer<void>();
+    messenger.setMockMethodCallHandler(LunaExoPlayer.diagnosticChannel, (call) {
+      if (call.method != 'transition') return Future.value({});
+      started.complete();
+      return pending.future;
+    });
+    final player = LunaExoPlayer();
+    await player.open(Media('file:///synthetic-1.mp4'));
+    final changing = player.transitionTo(Media('file:///synthetic-2.mp4'));
+    await started.future;
+    await player.dispose();
+    pending.complete(response);
+    await changing;
+    expect(platform.created, 1);
+    expect(platform.disposed, [0]);
+    expect(player.controller, isNull);
+  });
 }

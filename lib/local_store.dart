@@ -162,9 +162,10 @@ class LocalStore extends ChangeNotifier {
       SourceSite.isAvailable(source) &&
       profile.allows(source) &&
       (_gateOff || _sourcesUnlocked || SourceSite.isPrimary(source));
-  List<SourceSite> get sources => SourceSite.visibleValues(
-    unlocked: _gateOff || _sourcesUnlocked,
-  ).where((site) => allowsSource(site.id)).toList();
+  List<SourceSite> get sources =>
+      SourceSite.visibleValues(unlocked: _gateOff || _sourcesUnlocked)
+          .where((site) => allowsSource(site.id))
+          .toList();
 
   /// 默认隐藏的站源是否已解锁。解锁状态只在本次运行内有效，重启后恢复隐藏。
   bool get sourcesUnlocked => _gateOff || _sourcesUnlocked;
@@ -1325,13 +1326,11 @@ class LocalStore extends ChangeNotifier {
           final values = raw == null
               ? null
               : (jsonDecode(raw) as Map)['values'] as Map;
-          final records =
-              jsonDecode(
-                    (values?['profiles'] as String?) ??
-                        preferences.getString('profiles') ??
-                        '[]',
-                  )
-                  as List;
+          final records = jsonDecode(
+            (values?['profiles'] as String?) ??
+                preferences.getString('profiles') ??
+                '[]',
+          ) as List;
           for (final row in records) {
             if (row is Map && row['admin'] == true) {
               originalAdmin = LocalProfile.fromJson(
@@ -1340,9 +1339,8 @@ class LocalStore extends ChangeNotifier {
             }
           }
         } catch (_) {}
-        final backupAdmin = _readProfiles(
-          data['profiles'],
-        ).firstWhere((profile) => profile.admin);
+        final backupAdmin = _readProfiles(data['profiles'])
+            .firstWhere((profile) => profile.admin);
         final verifier = originalAdmin?.protected == true
             ? originalAdmin!
             : backupAdmin;

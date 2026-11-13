@@ -324,8 +324,7 @@ class LunaExoPlayer implements Player {
   Map<String, String> _headers(Media media) {
     final headers = Map<String, String>.from(media.httpHeaders ?? const {});
     if (!headers.keys.any((key) => key.toLowerCase() == 'user-agent')) {
-      headers['User-Agent'] =
-          'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+      headers['User-Agent'] = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
     }
     return headers;
   }
@@ -543,8 +542,7 @@ class LunaExoPlayer implements Player {
     _stopDiagnostics();
     final headers = Map<String, String>.from(media.httpHeaders ?? const {});
     if (!headers.keys.any((key) => key.toLowerCase() == 'user-agent')) {
-      headers['User-Agent'] =
-          'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+      headers['User-Agent'] = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
     }
     try {
       if (_disposed || ticket != _openGeneration) return;
@@ -719,8 +717,7 @@ class LunaExoPlayer implements Player {
 
     // 针对防盗链 CDN 注入标准移动端 UA
     if (!headers.keys.any((k) => k.toLowerCase() == 'user-agent')) {
-      headers['User-Agent'] =
-          'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+      headers['User-Agent'] = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
     }
 
     final uri = Uri.tryParse(url);

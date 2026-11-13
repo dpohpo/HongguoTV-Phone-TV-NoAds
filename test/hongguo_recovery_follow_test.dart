@@ -96,9 +96,8 @@ void main() {
       expect(catalog.entries.map((e) => e.drama.id), contains(sequel.id));
       expect(repository.hydrated, 1);
       catalog.dispose();
-      final result = await NextSeasonResolver(
-        repository,
-      ).resolve(original, knownDramas: [], isCurrent: () => true);
+      final result = await NextSeasonResolver(repository)
+          .resolve(original, knownDramas: [], isCurrent: () => true);
       expect(result?.drama.id, sequel.id);
     },
   );
@@ -210,9 +209,8 @@ void main() {
     'automatic next season also recovers search and uses character match',
     () async {
       final repository = SearchRecoveryRepository();
-      final result = await NextSeasonResolver(
-        repository,
-      ).resolve(original, knownDramas: [], isCurrent: () => true);
+      final result = await NextSeasonResolver(repository)
+          .resolve(original, knownDramas: [], isCurrent: () => true);
       expect(result?.drama.id, sequel.id);
     },
   );

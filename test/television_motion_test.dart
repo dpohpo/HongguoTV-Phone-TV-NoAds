@@ -43,9 +43,8 @@ void main() {
           await tester.pumpWidget(
             MaterialApp(
               builder: (context, child) => MediaQuery(
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(disableAnimations: reduced),
+                data: MediaQuery.of(context)
+                    .copyWith(disableAnimations: reduced),
                 child: child!,
               ),
               home: Scaffold(

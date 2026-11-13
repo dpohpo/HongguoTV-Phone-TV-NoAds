@@ -117,97 +117,94 @@ class PlaybackPreloader extends ChangeNotifier {
       return;
     }
     final ticket = _generation;
-    _delay = Timer(
-      immediate ? Duration.zero : const Duration(milliseconds: 600),
-      () async {
-        _delay = null;
-        final pending = _PreloadRequest();
-        _pending = pending;
-        loading = true;
-        notifyListeners();
-        final clock = Stopwatch()..start();
-        DiaryService.add(
-          '[Preload] episode=${episode.number}, trigger=${immediate ? 'ready-to-prefetch' : 'stable-playback'}',
+    _delay = Timer(immediate ? Duration.zero : const Duration(milliseconds: 600), () async {
+      _delay = null;
+      final pending = _PreloadRequest();
+      _pending = pending;
+      loading = true;
+      notifyListeners();
+      final clock = Stopwatch()..start();
+      DiaryService.add(
+        '[Preload] episode=${episode.number}, trigger=${immediate ? 'ready-to-prefetch' : 'stable-playback'}',
+      );
+      try {
+        final plan = await repository.preload(
+          drama,
+          episode,
+          quality: quality,
+          online: online,
         );
-        try {
-          final plan = await repository.preload(
-            drama,
-            episode,
-            quality: quality,
-            online: online,
-          );
-          if (!pending.claimed && (_closed || ticket != _generation)) {
-            if (plan != null) await _releasePlan(plan);
-            return;
-          }
-          if (plan == null || plan.url.isEmpty) {
-            if (plan != null) _release(plan);
-            throw AppFailure('未取得预加载结果');
-          }
-          var expires = plan.preloadState.isNotEmpty
-              ? DateTime.utc(2100)
-              : _now().add(const Duration(minutes: 2));
-          if (plan.expiresAt > 0) {
-            final authorizationExpiry = DateTime.fromMillisecondsSinceEpoch(
-              plan.expiresAt,
-            ).subtract(const Duration(seconds: 5));
-            if (authorizationExpiry.isBefore(expires)) {
-              expires = authorizationExpiry;
-            }
-          }
-          if (!expires.isAfter(_now()) &&
-              !plan.local &&
-              !plan.preloadComplete &&
-              (plan.preloadState.isEmpty || pending.claimed)) {
-            _release(plan);
-            throw AppFailure('下一集播放凭证即将过期');
-          }
-          if (pending.claimed) {
-            DiaryService.add(
-              '[Preload] 已衔接在途预取 episode=${episode.number}, elapsedMs=${clock.elapsedMilliseconds}',
-            );
-            pending.result.complete(plan);
-            return;
-          }
-          _ready = plan;
-          _prepareMedia(plan);
-          _expires = expires;
-          error = '';
-          _sourceBlocked = false;
-          DiaryService.add(
-            '[Preload] resolved episode=${episode.number}, elapsedMs=${clock.elapsedMilliseconds}, bytes=${plan.prefetchedBytes}, complete=${plan.local || plan.preloadComplete}',
-          );
-          if (!plan.local && plan.session.isNotEmpty) {
-            _watch(drama, episode, quality, online, ticket);
-          }
-        } catch (failure) {
-          if (_closed || ticket != _generation) return;
-          error = failure.toString();
-          _sourceBlocked =
-              failure is AppFailure && failure.code == 'source_blocked';
-          final delay = _retryDelay(failure);
-          _retryAt = _now().add(delay);
-          _poll = Timer(delay, () {
-            if (!_closed && ticket == _generation) {
-              prepare(
-                drama,
-                episode,
-                quality: quality,
-                online: online,
-                immediate: true,
-              );
-            }
-          });
-        } finally {
-          if (!pending.result.isCompleted) pending.result.complete(null);
-          if (identical(_pending, pending)) _pending = null;
-          if (!_closed && ticket == _generation) {
-            loading = false;
-            notifyListeners();
+        if (!pending.claimed && (_closed || ticket != _generation)) {
+          if (plan != null) await _releasePlan(plan);
+          return;
+        }
+        if (plan == null || plan.url.isEmpty) {
+          if (plan != null) _release(plan);
+          throw AppFailure('未取得预加载结果');
+        }
+        var expires = plan.preloadState.isNotEmpty
+            ? DateTime.utc(2100)
+            : _now().add(const Duration(minutes: 2));
+        if (plan.expiresAt > 0) {
+          final authorizationExpiry = DateTime.fromMillisecondsSinceEpoch(
+            plan.expiresAt,
+          ).subtract(const Duration(seconds: 5));
+          if (authorizationExpiry.isBefore(expires)) {
+            expires = authorizationExpiry;
           }
         }
-      },
-    );
+        if (!expires.isAfter(_now()) &&
+            !plan.local &&
+            !plan.preloadComplete &&
+            (plan.preloadState.isEmpty || pending.claimed)) {
+          _release(plan);
+          throw AppFailure('下一集播放凭证即将过期');
+        }
+        if (pending.claimed) {
+          DiaryService.add(
+            '[Preload] 已衔接在途预取 episode=${episode.number}, elapsedMs=${clock.elapsedMilliseconds}',
+          );
+          pending.result.complete(plan);
+          return;
+        }
+        _ready = plan;
+        _prepareMedia(plan);
+        _expires = expires;
+        error = '';
+        _sourceBlocked = false;
+        DiaryService.add(
+          '[Preload] resolved episode=${episode.number}, elapsedMs=${clock.elapsedMilliseconds}, bytes=${plan.prefetchedBytes}, complete=${plan.local || plan.preloadComplete}',
+        );
+        if (!plan.local && plan.session.isNotEmpty) {
+          _watch(drama, episode, quality, online, ticket);
+        }
+      } catch (failure) {
+        if (_closed || ticket != _generation) return;
+        error = failure.toString();
+        _sourceBlocked =
+            failure is AppFailure && failure.code == 'source_blocked';
+        final delay = _retryDelay(failure);
+        _retryAt = _now().add(delay);
+        _poll = Timer(delay, () {
+          if (!_closed && ticket == _generation) {
+            prepare(
+              drama,
+              episode,
+              quality: quality,
+              online: online,
+              immediate: true,
+            );
+          }
+        });
+      } finally {
+        if (!pending.result.isCompleted) pending.result.complete(null);
+        if (identical(_pending, pending)) _pending = null;
+        if (!_closed && ticket == _generation) {
+          loading = false;
+          notifyListeners();
+        }
+      }
+    });
     notifyListeners();
   }
 

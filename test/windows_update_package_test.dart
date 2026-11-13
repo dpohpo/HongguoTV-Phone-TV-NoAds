@@ -97,9 +97,8 @@ void main() {
       ArchiveFile.string('windows-package.json', jsonEncode(manifest)),
     );
     change?.call(archive);
-    await File(
-      '${temporary.path}/pending.zip',
-    ).writeAsBytes(ZipEncoder().encode(archive, level: 9));
+    await File('${temporary.path}/pending.zip')
+        .writeAsBytes(ZipEncoder().encode(archive, level: 9));
   }
 
   Future<Map<String, dynamic>> extract() => extractWindowsPackage(

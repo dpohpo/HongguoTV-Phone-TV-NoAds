@@ -1,8 +1,12 @@
 import 'player_choice_menu.dart';
 import 'playback_preferences.dart';
+
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
+
+import 'app_build.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -770,7 +774,7 @@ class _WindowsPlayerControlsState extends State<WindowsPlayerControls> {
                                     ),
                                     _button(
                                       'windows-mini-quit',
-                                      '退出红果TV',
+                                      '退出$appName',
                                       Icons.close_rounded,
                                       WindowsDesktop.current?.quit,
                                     ),

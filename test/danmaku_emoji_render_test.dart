@@ -257,9 +257,8 @@ void main() {
       await finishDecoding(tester, cache);
       await tester.pump();
       expect(find.byType(RawImage), findsNWidgets(3));
-      final after = DanmakuEmojiContent.parse(
-        text,
-      ).measure(style, scaler, cache: cache);
+      final after = DanmakuEmojiContent.parse(text)
+          .measure(style, scaler, cache: cache);
       expect(before, greaterThan(0));
       expect(after, greaterThan(0));
       expect(

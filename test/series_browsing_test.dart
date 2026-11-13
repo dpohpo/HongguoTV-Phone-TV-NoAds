@@ -461,27 +461,24 @@ void main() {
     },
   );
 
-  test(
-    'series index keeps seasons and parts separate and ignores unrelated titles',
-    () async {
-      final store = await createStore();
-      const part = Drama(
-        id: 'hongguo:part',
-        source: 'hongguo',
-        title: '合成故事 第二部',
-      );
-      await store.refreshDramas([
-        firstSeason,
-        secondSeason,
-        part,
-        unrelatedSeason,
-      ]);
-      await store.toggleSeriesFavorite(firstSeason);
-      expect(store.followedSeries(part), isNull);
-      expect(store.followedSeries(unrelatedSeason), isNull);
-      expect(store.followedSeries(secondSeason)!.id, firstSeason.id);
-    },
-  );
+  test('series index keeps seasons and parts separate and ignores unrelated titles', () async {
+    final store = await createStore();
+    const part = Drama(
+      id: 'hongguo:part',
+      source: 'hongguo',
+      title: '合成故事 第二部',
+    );
+    await store.refreshDramas([
+      firstSeason,
+      secondSeason,
+      part,
+      unrelatedSeason,
+    ]);
+    await store.toggleSeriesFavorite(firstSeason);
+    expect(store.followedSeries(part), isNull);
+    expect(store.followedSeries(unrelatedSeason), isNull);
+    expect(store.followedSeries(secondSeason)!.id, firstSeason.id);
+  });
 
   test(
     'follow lookup batches library writes while checking every series',

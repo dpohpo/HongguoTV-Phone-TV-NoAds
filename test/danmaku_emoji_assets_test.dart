@@ -54,13 +54,11 @@ void main() {
   test(
     'every bundled original PNG matches immutable upstream provenance',
     () async {
-      final manifest =
-          jsonDecode(
-                await rootBundle.loadString(
-                  '${DanmakuEmojiAssets.directory}provenance.json',
-                ),
-              )
-              as Map<String, dynamic>;
+      final manifest = jsonDecode(
+        await rootBundle.loadString(
+          '${DanmakuEmojiAssets.directory}provenance.json',
+        ),
+      ) as Map<String, dynamic>;
       expect(manifest['source'], 'https://github.com/microsoft/fluentui-emoji');
       expect(manifest['revision'], matches(r'^[a-f0-9]{40}$'));
       expect(manifest['license'], 'MIT');
@@ -89,25 +87,22 @@ void main() {
     },
   );
 
-  test(
-    'Fluent MIT copyright is bundled and registered once for the license screen',
-    () async {
-      final license = await rootBundle.loadString(
-        '${DanmakuEmojiAssets.directory}LICENSE.txt',
-      );
-      expect(license, contains('MIT License'));
-      expect(license, contains('Copyright (c) Microsoft Corporation.'));
-      expect(license, contains('permission notice shall be included'));
-      DanmakuEmojiAssets.registerLicenses();
-      DanmakuEmojiAssets.registerLicenses();
-      final entries = await LicenseRegistry.licenses
-          .where((entry) => entry.packages.contains('Microsoft Fluent Emoji'))
-          .toList();
-      expect(entries, hasLength(1));
-      expect(
-        entries.single.paragraphs.map((p) => p.text).join('\n'),
-        contains('Copyright (c) Microsoft Corporation.'),
-      );
-    },
-  );
+  test('Fluent MIT copyright is bundled and registered once for the license screen', () async {
+    final license = await rootBundle.loadString(
+      '${DanmakuEmojiAssets.directory}LICENSE.txt',
+    );
+    expect(license, contains('MIT License'));
+    expect(license, contains('Copyright (c) Microsoft Corporation.'));
+    expect(license, contains('permission notice shall be included'));
+    DanmakuEmojiAssets.registerLicenses();
+    DanmakuEmojiAssets.registerLicenses();
+    final entries = await LicenseRegistry.licenses
+        .where((entry) => entry.packages.contains('Microsoft Fluent Emoji'))
+        .toList();
+    expect(entries, hasLength(1));
+    expect(
+      entries.single.paragraphs.map((p) => p.text).join('\n'),
+      contains('Copyright (c) Microsoft Corporation.'),
+    );
+  });
 }

@@ -16,9 +16,8 @@ Future<void> openProjectRepository(BuildContext context) async {
   } catch (_) {
     await Clipboard.setData(const ClipboardData(text: projectRepositoryUrl));
     if (context.mounted)
-      ScaffoldMessenger.maybeOf(
-        context,
-      )?.showSnackBar(const SnackBar(content: Text('无法打开浏览器，仓库链接已复制')));
+      ScaffoldMessenger.maybeOf(context)
+          ?.showSnackBar(const SnackBar(content: Text('无法打开浏览器，仓库链接已复制')));
   }
 }
 
@@ -49,11 +48,11 @@ class ProjectOrigin extends StatelessWidget {
       ),
       const SizedBox(height: 12),
       const Text(projectFreeNotice),
-                const SizedBox(height: 8),
-                const Text(
-                  '❤ 本分支是给白凯丽的私人定制版，愿你的每一集都比剧情还甜 ❤',
-                  style: TextStyle(color: Color(0xFFFF5C8A)),
-                ),
+      const SizedBox(height: 8),
+      const Text(
+        '❤ 本分支是给白凯丽的私人定制版，愿你的每一集都比剧情还甜 ❤',
+        style: TextStyle(color: Color(0xFFFF5C8A)),
+      ),
       const SizedBox(height: 8),
       const Text('软件来源为以下 GitHub 仓库。基于 guoapp 继续维护，保留上游作者、依赖作者的贡献及许可证。'),
       const SizedBox(height: 8),
@@ -127,9 +126,9 @@ class _FirstLaunchNoticeState extends State<FirstLaunchNotice> {
                             children: [
                               Text(
                                 '欢迎回家，凯丽 ❤️',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineSmall,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall,
                               ),
                               const SizedBox(height: 8),
                               const Text(

@@ -62,68 +62,59 @@ void main() {
     },
   );
 
-  test(
-    'background does not show or accumulate and same-process four-hour absence does not reset latch',
-    () {
-      runtime.setPlayback(owner, watching: true, canShow: true);
-      advance(const Duration(minutes: 1));
-      runtime.lifecycle(AppLifecycleState.paused);
-      expect(runtime.notice, isEmpty);
-      advance(const Duration(hours: 5));
-      expect(runtime.engine.progress.watchedMs, 60000);
-      runtime.lifecycle(AppLifecycleState.resumed);
-      runtime.tick();
-      expect(runtime.engine.progress.bedtimeLatched, true);
-      expect(runtime.notice.contains(WatchReminderKind.bedtime), true);
-    },
-  );
+  test('background does not show or accumulate and same-process four-hour absence does not reset latch', () {
+    runtime.setPlayback(owner, watching: true, canShow: true);
+    advance(const Duration(minutes: 1));
+    runtime.lifecycle(AppLifecycleState.paused);
+    expect(runtime.notice, isEmpty);
+    advance(const Duration(hours: 5));
+    expect(runtime.engine.progress.watchedMs, 60000);
+    runtime.lifecycle(AppLifecycleState.resumed);
+    runtime.tick();
+    expect(runtime.engine.progress.bedtimeLatched, true);
+    expect(runtime.notice.contains(WatchReminderKind.bedtime), true);
+  });
 
-  test(
-    'observed detached session followed by more than four hours releases bedtime only',
-    () {
-      runtime.setPlayback(owner, watching: true, canShow: true);
-      advance(const Duration(minutes: 1));
-      runtime.lifecycle(AppLifecycleState.detached);
-      advance(const Duration(hours: 4, seconds: 1));
-      runtime.lifecycle(AppLifecycleState.resumed);
-      runtime.tick();
-      expect(runtime.engine.progress.bedtimeLatched, false);
-      expect(runtime.engine.progress.watchedMs, 60000);
-      expect(runtime.notice, {WatchReminderKind.daily});
-    },
-  );
+  test('observed detached session followed by more than four hours releases bedtime only', () {
+    runtime.setPlayback(owner, watching: true, canShow: true);
+    advance(const Duration(minutes: 1));
+    runtime.lifecycle(AppLifecycleState.detached);
+    advance(const Duration(hours: 4, seconds: 1));
+    runtime.lifecycle(AppLifecycleState.resumed);
+    runtime.tick();
+    expect(runtime.engine.progress.bedtimeLatched, false);
+    expect(runtime.engine.progress.watchedMs, 60000);
+    expect(runtime.notice, {WatchReminderKind.daily});
+  });
 
-  test(
-    'short restart restores latch, long cold restart releases it and keeps daily time',
-    () async {
-      runtime.setPlayback(owner, watching: true, canShow: true);
-      advance(const Duration(minutes: 1));
-      await runtime.flush();
-      runtime.dispose();
-      await runtime.flush();
-      now = now.add(const Duration(hours: 1));
-      elapsed = Duration.zero;
-      runtime = WatchReminderRuntime(
-        store,
-        now: () => now,
-        elapsed: () => elapsed,
-        startTimer: false,
-      );
-      expect(runtime.engine.progress.bedtimeLatched, true);
-      expect(runtime.engine.progress.watchedMs, 60000);
-      runtime.dispose();
-      await runtime.flush();
-      now = now.add(const Duration(hours: 4, seconds: 1));
-      runtime = WatchReminderRuntime(
-        store,
-        now: () => now,
-        elapsed: () => elapsed,
-        startTimer: false,
-      );
-      expect(runtime.engine.progress.bedtimeLatched, false);
-      expect(runtime.engine.progress.watchedMs, 60000);
-    },
-  );
+  test('short restart restores latch, long cold restart releases it and keeps daily time', () async {
+    runtime.setPlayback(owner, watching: true, canShow: true);
+    advance(const Duration(minutes: 1));
+    await runtime.flush();
+    runtime.dispose();
+    await runtime.flush();
+    now = now.add(const Duration(hours: 1));
+    elapsed = Duration.zero;
+    runtime = WatchReminderRuntime(
+      store,
+      now: () => now,
+      elapsed: () => elapsed,
+      startTimer: false,
+    );
+    expect(runtime.engine.progress.bedtimeLatched, true);
+    expect(runtime.engine.progress.watchedMs, 60000);
+    runtime.dispose();
+    await runtime.flush();
+    now = now.add(const Duration(hours: 4, seconds: 1));
+    runtime = WatchReminderRuntime(
+      store,
+      now: () => now,
+      elapsed: () => elapsed,
+      startTimer: false,
+    );
+    expect(runtime.engine.progress.bedtimeLatched, false);
+    expect(runtime.engine.progress.watchedMs, 60000);
+  });
 
   test(
     'notices never stack and acknowledgement starts a full repeat interval',

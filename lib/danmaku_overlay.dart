@@ -326,9 +326,8 @@ class _DanmakuOverlayState extends State<DanmakuOverlay>
                 : widget.television
                 ? 12.0
                 : 8.0;
-            final scaler = MediaQuery.textScalerOf(
-              context,
-            ).clamp(maxScaleFactor: 1.15);
+            final scaler = MediaQuery.textScalerOf(context)
+                .clamp(maxScaleFactor: 1.15);
             final rowHeight = scaler.scale(fontSize) * (_mobile ? 1.75 : 1.5);
             final rows =
                 ((height * (widget.television ? .18 : .38) - topInset) /
@@ -372,9 +371,8 @@ class _DanmakuOverlayState extends State<DanmakuOverlay>
                         return const SizedBox.shrink();
                       }
                       double measure(String text) {
-                        return DanmakuEmojiContent.parse(
-                          text,
-                        ).measure(style, scaler, cache: _emojiCache);
+                        return DanmakuEmojiContent.parse(text)
+                            .measure(style, scaler, cache: _emojiCache);
                       }
 
                       final emojiRevision = (

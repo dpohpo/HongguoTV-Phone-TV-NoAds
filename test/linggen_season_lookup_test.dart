@@ -9,6 +9,7 @@ import 'package:duanju_app/next_season_resolver.dart';
 import 'package:duanju_app/series_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'fixtures.dart';
 
 const anchor = Drama(
@@ -97,9 +98,8 @@ void main() {
       await catalog.load();
       expect(catalog.entries.map((e) => e.season), [42, 43]);
       expect(repository.searchRequests, contains(('无灵证道 第43季', 2)));
-      final detail = await NextSeasonResolver(
-        repository,
-      ).resolve(anchor, knownDramas: [], isCurrent: () => true);
+      final detail = await NextSeasonResolver(repository)
+          .resolve(anchor, knownDramas: [], isCurrent: () => true);
       expect(detail?.drama.id, next.id);
       expect(
         hongguoSameSeries(
@@ -134,9 +134,8 @@ void main() {
       addTearDown(updates.dispose);
       await updates.refresh(force: true);
       expect(store.hasNextSeason(current), isTrue);
-      final detail = await NextSeasonResolver(
-        repository,
-      ).resolve(current, knownDramas: [], isCurrent: () => true);
+      final detail = await NextSeasonResolver(repository)
+          .resolve(current, knownDramas: [], isCurrent: () => true);
       expect(detail?.drama.id, 'hongguo:7699400314490735678');
       expect(detail!.episodes, isNotEmpty);
       final restored = LocalStore(prefs);

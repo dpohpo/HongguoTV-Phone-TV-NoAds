@@ -134,9 +134,8 @@ void main() {
               final data = (await picture.toByteData(
                 format: ui.ImageByteFormat.png,
               ))!;
-              await File(
-                '$directory/${spec.$1}.png',
-              ).writeAsBytes(data.buffer.asUint8List());
+              await File('$directory/${spec.$1}.png')
+                  .writeAsBytes(data.buffer.asUint8List());
               picture.dispose();
             });
           }

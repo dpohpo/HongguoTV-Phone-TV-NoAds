@@ -275,75 +275,66 @@ void main() {
     );
   }
 
-  test(
-    'rewatching season one replaces the later season instead of maximizing season or episode',
-    () async {
-      final (left, right, _, _) = await pair();
-      await baseline(left, right);
-      await left.store.saveWatch(progress(season3, 12, 70, 3));
-      await left.synchronize();
-      await right.store.saveWatch(progress(season1, 1, 3, 5));
-      await right.synchronize();
-      expectProgress(left.store, season1, 1, 3);
-      expect(left.store.history.any((w) => w.drama.id == season3.id), true);
-    },
-  );
+  test('rewatching season one replaces the later season instead of maximizing season or episode', () async {
+    final (left, right, _, _) = await pair();
+    await baseline(left, right);
+    await left.store.saveWatch(progress(season3, 12, 70, 3));
+    await left.synchronize();
+    await right.store.saveWatch(progress(season1, 1, 3, 5));
+    await right.synchronize();
+    expectProgress(left.store, season1, 1, 3);
+    expect(left.store.history.any((w) => w.drama.id == season3.id), true);
+  });
 
-  test(
-    'offline cross-season conflict selection retains the entire chosen progress value',
-    () async {
-      final (left, right, _, _) = await pair();
-      await baseline(left, right);
-      await left.store.saveWatch(progress(season3, 7, 37, 3));
-      await right.store.saveWatch(progress(season2, 9, 61, 4));
-      await left.synchronize();
-      final conflict = left.store.lanDocument.records[season1.id]!;
-      expect(conflict.progress.conflict, true);
-      final choice = conflict.progress.values.firstWhere(
-        (v) => lanMap(lanMap(v.value)['drama'])['id'] == season3.id,
-      );
-      await left.store.resolveLanConflict(
-        season1.id,
-        'progress',
-        choice,
-        conflict.hash,
-      );
-      await left.synchronize();
-      expectProgress(right.store, season3, 7, 37);
-      expect(
-        right.store.lanDocument.records[season1.id]!.watch!.updatedAt,
-        progress(season3, 7, 37, 3).updatedAt,
-      );
-      final restarted = LocalStore(right.store.preferences);
-      addTearDown(restarted.dispose);
-      expectProgress(restarted, season3, 7, 37);
-    },
-  );
+  test('offline cross-season conflict selection retains the entire chosen progress value', () async {
+    final (left, right, _, _) = await pair();
+    await baseline(left, right);
+    await left.store.saveWatch(progress(season3, 7, 37, 3));
+    await right.store.saveWatch(progress(season2, 9, 61, 4));
+    await left.synchronize();
+    final conflict = left.store.lanDocument.records[season1.id]!;
+    expect(conflict.progress.conflict, true);
+    final choice = conflict.progress.values.firstWhere(
+      (v) => lanMap(lanMap(v.value)['drama'])['id'] == season3.id,
+    );
+    await left.store.resolveLanConflict(
+      season1.id,
+      'progress',
+      choice,
+      conflict.hash,
+    );
+    await left.synchronize();
+    expectProgress(right.store, season3, 7, 37);
+    expect(
+      right.store.lanDocument.records[season1.id]!.watch!.updatedAt,
+      progress(season3, 7, 37, 3).updatedAt,
+    );
+    final restarted = LocalStore(right.store.preferences);
+    addTearDown(restarted.dispose);
+    expectProgress(restarted, season3, 7, 37);
+  });
 
-  test(
-    'deleting one season propagates its tombstone without clearing other seasons',
-    () async {
-      final (left, right, _, _) = await pair();
-      await baseline(left, right);
-      await left.store.saveWatch(progress(season3, 7, 37, 3));
-      await left.synchronize();
-      await left.store.removeHistory(season3.id);
-      await left.synchronize();
-      expectProgress(right.store, season1, 2, 8);
-      expect(right.store.history.any((w) => w.drama.id == season3.id), false);
-      await right.synchronize();
-      expect(
-        left.store.lanDocument.records[season1.id]!.watch!.drama.id,
-        season1.id,
-      );
-      await left.store.saveWatch(progress(season3, 4, 15, 6));
-      await left.synchronize();
-      await left.store.removeHistory(season1.id);
-      await left.synchronize();
-      expectProgress(right.store, season3, 4, 15);
-      expect(right.store.history.any((w) => w.drama.id == season1.id), false);
-    },
-  );
+  test('deleting one season propagates its tombstone without clearing other seasons', () async {
+    final (left, right, _, _) = await pair();
+    await baseline(left, right);
+    await left.store.saveWatch(progress(season3, 7, 37, 3));
+    await left.synchronize();
+    await left.store.removeHistory(season3.id);
+    await left.synchronize();
+    expectProgress(right.store, season1, 2, 8);
+    expect(right.store.history.any((w) => w.drama.id == season3.id), false);
+    await right.synchronize();
+    expect(
+      left.store.lanDocument.records[season1.id]!.watch!.drama.id,
+      season1.id,
+    );
+    await left.store.saveWatch(progress(season3, 4, 15, 6));
+    await left.synchronize();
+    await left.store.removeHistory(season1.id);
+    await left.synchronize();
+    expectProgress(right.store, season3, 4, 15);
+    expect(right.store.history.any((w) => w.drama.id == season1.id), false);
+  });
 
   test(
     'clear and unfollow do not revive stale synchronized series progress',
@@ -470,30 +461,24 @@ void main() {
     },
   );
 
-  test(
-    'inactive retains an in-flight summary and resumed does not recreate the session',
-    () async {
-      final (left, right, transport, _) = await pair();
-      transport.holdSummary = true;
-      final sync = left.synchronize();
-      await Future<void>.delayed(Duration.zero);
-      final starts = transport.starts;
-      final stops = transport.commands.where((value) => value == 'stop').length;
-      left.didChangeAppLifecycleState(AppLifecycleState.inactive);
-      right.didChangeAppLifecycleState(AppLifecycleState.inactive);
-      expect(left.receiving, isTrue);
-      expect(right.receiving, isTrue);
-      transport.releaseSummary();
-      await sync;
-      left.didChangeAppLifecycleState(AppLifecycleState.resumed);
-      expect(transport.starts, starts);
-      expect(
-        transport.commands.where((value) => value == 'stop').length,
-        stops,
-      );
-      expect(left.syncMessage, '追剧及其续播进度已同步');
-    },
-  );
+  test('inactive retains an in-flight summary and resumed does not recreate the session', () async {
+    final (left, right, transport, _) = await pair();
+    transport.holdSummary = true;
+    final sync = left.synchronize();
+    await Future<void>.delayed(Duration.zero);
+    final starts = transport.starts;
+    final stops = transport.commands.where((value) => value == 'stop').length;
+    left.didChangeAppLifecycleState(AppLifecycleState.inactive);
+    right.didChangeAppLifecycleState(AppLifecycleState.inactive);
+    expect(left.receiving, isTrue);
+    expect(right.receiving, isTrue);
+    transport.releaseSummary();
+    await sync;
+    left.didChangeAppLifecycleState(AppLifecycleState.resumed);
+    expect(transport.starts, starts);
+    expect(transport.commands.where((value) => value == 'stop').length, stops);
+    expect(left.syncMessage, '追剧及其续播进度已同步');
+  });
 
   for (final state in [
     AppLifecycleState.hidden,
@@ -575,68 +560,62 @@ void main() {
       expect(transport.starts, starts);
     },
   );
-  test(
-    'cancel before commit preserves records and does not hide an uncertain remote receipt',
-    () async {
-      final (left, right, transport, _) = await pair();
-      await left.store.toggleFavorite(FixtureRepository.free);
-      transport.holdPath = 'sync/commit';
-      final sync = left.synchronize();
-      final failure = expectLater(
-        sync,
-        throwsA(
-          isA<StateError>().having(
-            (value) => value.toString(),
-            'warning',
-            contains('尚未确认对方是否保存'),
-          ),
+  test('cancel before commit preserves records and does not hide an uncertain remote receipt', () async {
+    final (left, right, transport, _) = await pair();
+    await left.store.toggleFavorite(FixtureRepository.free);
+    transport.holdPath = 'sync/commit';
+    final sync = left.synchronize();
+    final failure = expectLater(
+      sync,
+      throwsA(
+        isA<StateError>().having(
+          (value) => value.toString(),
+          'warning',
+          contains('尚未确认对方是否保存'),
         ),
-      );
-      while (transport.held.isEmpty) {
-        await Future<void>.delayed(Duration.zero);
-      }
-      await left.cancelSync();
-      await failure;
-      expect(left.store.isFavorite(FixtureRepository.free.id), isTrue);
-      expect(right.store.isFavorite(FixtureRepository.free.id), isFalse);
-      transport.holdPath = null;
-      await left.synchronize();
-      expect(right.store.isFavorite(FixtureRepository.free.id), isTrue);
-    },
-  );
-
-  test(
-    'cancel after remote save retains the partial-save warning and retry converges',
-    () async {
-      final (left, right, transport, remote) = await pair();
-      await left.store.toggleFavorite(FixtureRepository.free);
-      remote.holdResponsePath = 'sync/commit';
-      final sync = left.synchronize();
-      final failure = expectLater(
-        sync,
-        throwsA(
-          isA<StateError>().having(
-            (value) => value.toString(),
-            'warning',
-            contains('对方已保存'),
-          ),
-        ),
-      );
-      while (!right.store.isFavorite(FixtureRepository.free.id)) {
-        await Future<void>.delayed(Duration.zero);
-      }
-      await left.cancelSync();
-      await failure;
-      expect(left.store.isFavorite(FixtureRepository.free.id), isTrue);
-      expect(right.store.isFavorite(FixtureRepository.free.id), isTrue);
-      remote.holdResponsePath = null;
-      await left.synchronize();
-      expect(
-        left.store.lanDocument.hashFor({'hongguo'}),
-        right.store.lanDocument.hashFor({'hongguo'}),
-      );
+      ),
+    );
+    while (transport.held.isEmpty) {
       await Future<void>.delayed(Duration.zero);
-      expect(transport.pendingRequests, isEmpty);
-    },
-  );
+    }
+    await left.cancelSync();
+    await failure;
+    expect(left.store.isFavorite(FixtureRepository.free.id), isTrue);
+    expect(right.store.isFavorite(FixtureRepository.free.id), isFalse);
+    transport.holdPath = null;
+    await left.synchronize();
+    expect(right.store.isFavorite(FixtureRepository.free.id), isTrue);
+  });
+
+  test('cancel after remote save retains the partial-save warning and retry converges', () async {
+    final (left, right, transport, remote) = await pair();
+    await left.store.toggleFavorite(FixtureRepository.free);
+    remote.holdResponsePath = 'sync/commit';
+    final sync = left.synchronize();
+    final failure = expectLater(
+      sync,
+      throwsA(
+        isA<StateError>().having(
+          (value) => value.toString(),
+          'warning',
+          contains('对方已保存'),
+        ),
+      ),
+    );
+    while (!right.store.isFavorite(FixtureRepository.free.id)) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    await left.cancelSync();
+    await failure;
+    expect(left.store.isFavorite(FixtureRepository.free.id), isTrue);
+    expect(right.store.isFavorite(FixtureRepository.free.id), isTrue);
+    remote.holdResponsePath = null;
+    await left.synchronize();
+    expect(
+      left.store.lanDocument.hashFor({'hongguo'}),
+      right.store.lanDocument.hashFor({'hongguo'}),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(transport.pendingRequests, isEmpty);
+  });
 }
