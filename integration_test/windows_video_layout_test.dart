@@ -162,9 +162,8 @@ void main() {
       final origin = boundary.localToGlobal(Offset.zero);
       final image = await boundary.toImage(pixelRatio: 1);
       final png = (await image.toByteData(format: ui.ImageByteFormat.png))!;
-      await File(
-        '${directory.path}/$name.png',
-      ).writeAsBytes(png.buffer.asUint8List());
+      await File('${directory.path}/$name.png')
+          .writeAsBytes(png.buffer.asUint8List());
       Rect? pixels;
       if (hidden) {
         final data = (await image.toByteData(

@@ -230,7 +230,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '❤ 白凯丽专属追剧小屋 ❤',
+                              '❤ 白凯莉专属追剧小屋 ❤',
                               style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                             SizedBox(height: 4),

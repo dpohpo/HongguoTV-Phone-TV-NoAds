@@ -93,7 +93,7 @@ class AppUpdateScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 children: [
                   Text(
-                    '凯丽小剧场',
+                    '凯莉小剧场',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 8),

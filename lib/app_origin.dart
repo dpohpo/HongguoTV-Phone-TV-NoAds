@@ -50,7 +50,7 @@ class ProjectOrigin extends StatelessWidget {
       const Text(projectFreeNotice),
       const SizedBox(height: 8),
       const Text(
-        '❤ 本分支是给白凯丽的私人定制版，愿你的每一集都比剧情还甜 ❤',
+        '❤ 本分支是给白凯莉的私人定制版，愿你的每一集都比剧情还甜 ❤',
         style: TextStyle(color: Color(0xFFFF5C8A)),
       ),
       const SizedBox(height: 8),
@@ -125,7 +125,7 @@ class _FirstLaunchNoticeState extends State<FirstLaunchNotice> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '欢迎回家，凯丽 ❤️',
+                                '欢迎回家，凯莉 ❤️',
                                 style: Theme.of(context)
                                     .textTheme
                                     .headlineSmall,
