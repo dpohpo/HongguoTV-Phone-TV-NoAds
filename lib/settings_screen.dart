@@ -209,6 +209,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.favorite_rounded,
+                        color: Color(0xFFFF5C8A),
+                        size: 28,
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '❤ 白凯丽专属追剧小屋 ❤',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            SizedBox(height: 4),
+                            Text('由老公亲手改装 · 愿你追剧的每一天都比剧情还甜'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const AppUpdateTile(),
               if (defaultTargetPlatform == TargetPlatform.android &&
                   AppLayout.isTelevisionDevice(context))

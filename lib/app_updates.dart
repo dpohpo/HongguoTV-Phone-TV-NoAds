@@ -12,7 +12,7 @@ import 'app_build.dart';
 import 'windows_update_runtime.dart';
 import 'app_layout.dart' show appVersion, windowsBuildNumber;
 
-const updateRepository = 'qq294716498/HongguoTV-Phone-TV-NoAds';
+const updateRepository = 'dpohpo/HongguoTV-Phone-TV-NoAds';
 const updateApi =
     'https://api.github.com/repos/$updateRepository/releases/latest';
 const updatePage = 'https://github.com/$updateRepository/releases/latest';

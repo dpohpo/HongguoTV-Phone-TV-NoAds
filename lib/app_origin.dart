@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app_layout.dart';
 
 const projectRepositoryUrl =
-    'https://github.com/qq294716498/HongguoTV-Phone-TV-NoAds';
-const projectOwner = 'qq294716498';
+    'https://github.com/dpohpo/HongguoTV-Phone-TV-NoAds';
+const projectOwner = 'dpohpo';
 const projectFreeNotice = '本软件免费提供，仅供学习交流，请勿付费购买，谨防盗卖';
 const originNoticeAcknowledgedKey = 'app_origin_notice_acknowledged_v1';
 
@@ -49,6 +49,11 @@ class ProjectOrigin extends StatelessWidget {
       ),
       const SizedBox(height: 12),
       const Text(projectFreeNotice),
+                const SizedBox(height: 8),
+                const Text(
+                  '❤ 本分支是给白凯丽的私人定制版，愿你的每一集都比剧情还甜 ❤',
+                  style: TextStyle(color: Color(0xFFFF5C8A)),
+                ),
       const SizedBox(height: 8),
       const Text('软件来源为以下 GitHub 仓库。基于 guoapp 继续维护，保留上游作者、依赖作者的贡献及许可证。'),
       const SizedBox(height: 8),
@@ -121,10 +126,15 @@ class _FirstLaunchNoticeState extends State<FirstLaunchNotice> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '欢迎使用$appName',
+                                '欢迎回家，凯丽 ❤️',
                                 style: Theme.of(
                                   context,
                                 ).textTheme.headlineSmall,
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                '这座小剧场是老公亲手为你搭的，片单已备好，今天想看哪一部？',
+                                style: TextStyle(color: Color(0xFFFF5C8A)),
                               ),
                               const SizedBox(height: 20),
                               const ProjectOrigin(),

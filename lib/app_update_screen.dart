@@ -94,7 +94,7 @@ class AppUpdateScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 children: [
                   Text(
-                    '红果TV',
+                    '凯丽小剧场',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 8),
